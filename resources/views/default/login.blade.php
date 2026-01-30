@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Admin Login - Flashcards')
+@section('title', 'Login - Flashcards')
 
 @section('content')
 <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 relative overflow-hidden">
@@ -18,14 +18,11 @@
         <!-- Logo and Header -->
         <div class="text-center">
             <h2 class="text-4xl font-extrabold text-white mb-2">
-                Admin CMS
+                Welcome Back
             </h2>
             <p class="text-indigo-200 text-sm font-medium">
-                {{ $config['name'] ?? 'Flashcards' }} Administration Panel
+                Sign in to {{ $config['name'] ?? 'Flashcards' }}
             </p>
-            @if(isset($flashcardsConfig))
-            <p class="text-indigo-300 text-xs mt-1">Version {{ $flashcardsConfig['version'] ?? '1.0' }}</p>
-            @endif
         </div>
 
         <!-- Login Form Card -->
@@ -105,49 +102,6 @@
                     </button>
                 </div>
 
-                <!-- Database Connection Status -->
-                @if(isset($dbConnection))
-                <div class="mt-6 p-4 rounded-xl border {{ $dbConnection['status'] === 'connected' ? 'bg-green-50 border-green-200' : ($dbConnection['status'] === 'error' ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200') }}">
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="text-sm font-semibold {{ $dbConnection['status'] === 'connected' ? 'text-green-900' : ($dbConnection['status'] === 'error' ? 'text-red-900' : 'text-yellow-900') }}">
-                            Database Status
-                        </h3>
-                        @if($dbConnection['status'] === 'connected')
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <span class="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span>
-                                Connected
-                            </span>
-                        @elseif($dbConnection['status'] === 'error')
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                Error
-                            </span>
-                        @else
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                Warning
-                            </span>
-                        @endif
-                    </div>
-                    @if($dbConnection['status'] === 'connected')
-                        <div class="text-xs text-green-700 space-y-1">
-                            <div class="flex justify-between">
-                                <span>Database:</span>
-                                <span class="font-mono font-semibold">{{ $dbConnection['database'] ?? 'N/A' }}</span>
-                            </div>
-                            @if(isset($dbConnection['timestamp']))
-                            <div class="flex justify-between text-green-600">
-                                <span>Checked:</span>
-                                <span>{{ $dbConnection['timestamp'] }}</span>
-                            </div>
-                            @endif
-                        </div>
-                    @elseif($dbConnection['status'] === 'error')
-                        <p class="text-xs text-red-700">{{ $dbConnection['message'] ?? 'Unknown error' }}</p>
-                    @else
-                        <p class="text-xs text-yellow-700">{{ $dbConnection['message'] ?? 'Tenancy not initialized' }}</p>
-                    @endif
-                </div>
-                @endif
-
                 <!-- Register Link -->
                 <div class="mt-4 text-center">
                     <p class="text-sm text-gray-600">
@@ -162,7 +116,7 @@
 
         <!-- Back to Home Link -->
         <div class="text-center">
-            <a href="http://flashcards.test:8000" 
+            <a href="/" 
                class="inline-flex items-center text-sm font-medium text-white/80 hover:text-white transition-colors duration-200">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -171,20 +125,6 @@
             </a>
         </div>
     </div>
-
-    <!-- Console Log Script -->
-    @if(isset($dbConnection) && isset($dbConnection['log_to_console']) && $dbConnection['log_to_console'])
-    <script>
-        console.log('%cFlashcards Admin - Database Connection Status', 'color: #6366f1; font-weight: bold; font-size: 14px;');
-        console.log({
-            status: '{{ $dbConnection['status'] ?? 'unknown' }}',
-            database: '{{ $dbConnection['database'] ?? 'N/A' }}',
-            message: '{{ $dbConnection['message'] ?? 'N/A' }}',
-            timestamp: '{{ $dbConnection['timestamp'] ?? 'N/A' }}',
-            view: '{{ $dbConnection['view'] ?? 'admin' }}'
-        });
-    </script>
-    @endif
 
     <!-- Animation Styles -->
     <style>
@@ -205,4 +145,3 @@
     </style>
 </div>
 @endsection
-

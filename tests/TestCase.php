@@ -59,7 +59,14 @@ abstract class TestCase extends BaseTestCase
      */
     protected function createTenantTables(): void
     {
-        // Drop and recreate to ensure clean state
+        // Add avatar column to users table (tenant-specific field)
+        if (!Schema::hasColumn('users', 'avatar')) {
+            Schema::table('users', function ($table) {
+                $table->string('avatar')->nullable()->after('password');
+            });
+        }
+
+        // Drop and recreate social_accounts to ensure clean state
         Schema::dropIfExists('social_accounts');
         
         Schema::create('social_accounts', function ($table) {

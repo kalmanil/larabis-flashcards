@@ -3,6 +3,7 @@
 namespace App\Features\Auth\Controllers;
 
 use App\Features\Auth\Models\User;
+use App\Helpers\TenancyHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -14,7 +15,7 @@ class RegisterController
      */
     public function showRegistrationForm()
     {
-        return view('auth.register');
+        return TenancyHelper::view('register');
     }
 
     /**

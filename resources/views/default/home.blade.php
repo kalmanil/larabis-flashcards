@@ -22,9 +22,13 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <a href="http://admin.flashcards.test:8000" 
+                    <a href="{{ route('register') }}" 
+                       class="px-4 py-2 text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200">
+                        Sign up
+                    </a>
+                    <a href="{{ route('login') }}" 
                        class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-                        Admin Login
+                        Login
                     </a>
                 </div>
             </div>
@@ -144,12 +148,19 @@
 
         <!-- Action Buttons -->
         <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-12">
-            <a href="http://admin.flashcards.test:8000" 
+            <a href="{{ route('register') }}" 
                class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center space-x-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
                 </svg>
-                <span>Access Admin Panel</span>
+                <span>Create Account</span>
+            </a>
+            <a href="{{ route('login') }}" 
+               class="w-full sm:w-auto px-8 py-3 bg-white text-indigo-600 border-2 border-indigo-500 rounded-xl font-semibold hover:bg-indigo-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                </svg>
+                <span>Sign In</span>
             </a>
         </div>
     </div>

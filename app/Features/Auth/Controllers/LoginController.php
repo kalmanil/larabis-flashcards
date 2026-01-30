@@ -2,6 +2,7 @@
 
 namespace App\Features\Auth\Controllers;
 
+use App\Helpers\TenancyHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -13,7 +14,7 @@ class LoginController
      */
     public function showLoginForm()
     {
-        return view('auth.login');
+        return TenancyHelper::view('login');
     }
 
     /**

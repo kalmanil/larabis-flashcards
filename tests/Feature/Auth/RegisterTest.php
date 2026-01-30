@@ -10,31 +10,18 @@ use Tests\TestCase;
 /**
  * Registration Feature Tests
  * 
- * SKIPPED: These tests require auth routes to be registered (Phase 5).
- * Unskip these tests after routes are registered in Larabis.
+ * Tests for user registration flow.
  */
 class RegisterTest extends TestCase
 {
-
-    /**
-     * Skip message for all tests
-     */
-    protected function skipUntilRoutesRegistered(): void
-    {
-        $this->markTestSkipped('Auth routes not registered yet. Complete Phase 5 to enable these tests.');
-    }
-
     /**
      * Test registration form can be displayed
      */
     public function test_registration_form_can_be_displayed()
     {
-        $this->skipUntilRoutesRegistered();
-
         $response = $this->get('/register');
 
         $response->assertStatus(200);
-        $response->assertViewIs('auth.register');
     }
 
     /**
@@ -42,8 +29,6 @@ class RegisterTest extends TestCase
      */
     public function test_user_can_register_with_valid_data()
     {
-        $this->skipUntilRoutesRegistered();
-
         $response = $this->post('/register', [
             'name' => 'John Doe',
             'email' => 'john@example.com',
@@ -66,8 +51,6 @@ class RegisterTest extends TestCase
      */
     public function test_user_password_is_hashed_during_registration()
     {
-        $this->skipUntilRoutesRegistered();
-
         $this->post('/register', [
             'name' => 'John Doe',
             'email' => 'john@example.com',
@@ -87,8 +70,6 @@ class RegisterTest extends TestCase
      */
     public function test_user_is_logged_in_after_registration()
     {
-        $this->skipUntilRoutesRegistered();
-
         $response = $this->post('/register', [
             'name' => 'John Doe',
             'email' => 'john@example.com',
@@ -108,8 +89,6 @@ class RegisterTest extends TestCase
      */
     public function test_registration_requires_name()
     {
-        $this->skipUntilRoutesRegistered();
-
         $response = $this->post('/register', [
             'email' => 'john@example.com',
             'password' => 'password123',
@@ -125,8 +104,6 @@ class RegisterTest extends TestCase
      */
     public function test_registration_requires_email()
     {
-        $this->skipUntilRoutesRegistered();
-
         $response = $this->post('/register', [
             'name' => 'John Doe',
             'password' => 'password123',
@@ -142,8 +119,6 @@ class RegisterTest extends TestCase
      */
     public function test_registration_requires_valid_email_format()
     {
-        $this->skipUntilRoutesRegistered();
-
         $response = $this->post('/register', [
             'name' => 'John Doe',
             'email' => 'invalid-email',
@@ -160,8 +135,6 @@ class RegisterTest extends TestCase
      */
     public function test_registration_requires_unique_email()
     {
-        $this->skipUntilRoutesRegistered();
-
         User::create([
             'name' => 'Existing User',
             'email' => 'existing@example.com',
@@ -184,8 +157,6 @@ class RegisterTest extends TestCase
      */
     public function test_registration_requires_password_confirmation()
     {
-        $this->skipUntilRoutesRegistered();
-
         $response = $this->post('/register', [
             'name' => 'John Doe',
             'email' => 'john@example.com',
@@ -202,8 +173,6 @@ class RegisterTest extends TestCase
      */
     public function test_registration_requires_minimum_password_length()
     {
-        $this->skipUntilRoutesRegistered();
-
         $response = $this->post('/register', [
             'name' => 'John Doe',
             'email' => 'john@example.com',

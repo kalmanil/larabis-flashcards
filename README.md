@@ -6,13 +6,11 @@ Flashcards tenant for **Larabis**, a multi-tenant Laravel application. This pack
 
 - **Package:** `tenants/flashcards`
 - **Type:** Library (loaded by Larabis when the flashcards tenant is active)
-- **Features:** Email/password auth, registration, logout, social login (Facebook, Google), user avatars, and tenant-specific page logic
+- **Features:** Email/password auth, registration, logout, social login (Facebook, Google), user avatars, and tenant-specific page data (default + admin views)
 
 ## Requirements
 
-- Larabis host application (root project)
-- PHP 8.x
-- Laravel (version required by Larabis)
+- Larabis host application (root project). Align with Larabis: PHP ^8.2, Laravel ^12.0.
 - [Laravel Socialite](https://laravel.com/docs/socialite) for OAuth (Facebook, Google)
 
 ## Project Structure
@@ -24,11 +22,13 @@ tenants/flashcards/
 │   │   ├── Controllers/     # Login, Logout, Register, SocialAuth
 │   │   └── Models/          # User, SocialAccount
 │   └── Pages/
-│       ├── Traits/          # Default tenant PageLogic
-│       └── Views/admin/Traits/
-├── database/migrations/     # Tenant DB: social_accounts, users.avatar
+│       ├── Admin/
+│       │   └── PageDataService.php   # Admin view page data (extends default)
+│       └── Default/
+│           └── PageDataService.php   # Default/landing view page data, DB check, config
+├── database/migrations/    # Tenant DB: social_accounts, users.avatar
 ├── resources/views/         # default + admin Blade views (login, register, home)
-├── routes/web.php           # Auth + social routes
+├── routes/web.php          # Auth + social routes
 ├── tests/
 │   ├── Unit/Auth/Models/
 │   └── Feature/Auth/
@@ -63,6 +63,15 @@ This tenant does not run standalone. Install and use it from the **Larabis root*
 | GET | `/auth/{provider}/callback` | `social.callback` | OAuth callback |
 
 `{provider}` is restricted to `facebook` or `google`.
+
+## Page Data
+
+Follows Larabis page-data architecture: **service classes** (not traits), implementing `PageDataServiceInterface`. Resolved by `PageDataServiceFactory` from tenant + view. Base classes live in Larabis (`app/Features/Pages/Base/Default/`, `Base/Admin/`); this tenant extends them with same class name `PageDataService` in `Default/` and `Admin/`.
+
+- **Default** (`Pages/Default/PageDataService.php`): Landing view — `flashcardsConfig` (name, version, description) and `dbConnection` (tenant DB status).
+- **Admin** (`Pages/Admin/PageDataService.php`): Admin view — merges default page data with admin config (`view_type`, `requires_auth`) and adds `getAdminDashboardData()` (DB status, panel flag, stats, activity, notifications).
+
+**View naming (Larabis rule):** View names must NOT include the view code. Use `'home'`, `'login'`, `'register'` (not `'admin.home'`). Larabis builds the full view path as `tenants.{tenant_id}.{code}.{view_name}` (e.g. `tenants.flashcards.admin.home`).
 
 ## Database (Tenant)
 

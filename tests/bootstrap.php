@@ -51,21 +51,18 @@ spl_autoload_register(function ($class) {
     }
 }, true, true); // throw=true, prepend=true
 
-// Register tenant-specific autoloader for App\Features\Auth namespace (also prepend)
-spl_autoload_register(function ($class) {
-    // Map App\Features\Auth\* to tenant's app/Features/Auth/*
-    $prefix = 'App\\Features\\Auth\\';
-    $baseDir = dirname(__DIR__) . '/app/Features/Auth/';
-    
-    $len = strlen($prefix);
-    if (strncmp($prefix, $class, $len) !== 0) {
-        return;
-    }
-    
-    $relativeClass = substr($class, $len);
-    $file = $baseDir . str_replace('\\', '/', $relativeClass) . '.php';
-    
-    if (file_exists($file)) {
-        require $file;
-    }
-}, true, true); // throw=true, prepend=true
+// Register tenant-specific autoloader for App\Features\Auth and App\Features\Flashcards (also prepend)
+foreach (['App\\Features\\Auth\\' => 'app/Features/Auth/', 'App\\Features\\Flashcards\\' => 'app/Features/Flashcards/'] as $prefix => $baseDir) {
+    spl_autoload_register(function ($class) use ($prefix, $baseDir) {
+        $baseDir = dirname(__DIR__) . '/' . $baseDir;
+        $len = strlen($prefix);
+        if (strncmp($prefix, $class, $len) !== 0) {
+            return;
+        }
+        $relativeClass = substr($class, $len);
+        $file = $baseDir . str_replace('\\', '/', $relativeClass) . '.php';
+        if (file_exists($file)) {
+            require $file;
+        }
+    }, true, true);
+}

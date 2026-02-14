@@ -29,6 +29,22 @@ class User extends Authenticatable
     ];
 
     /**
+     * Relationship to decks
+     */
+    public function decks()
+    {
+        return $this->hasMany(\App\Features\Flashcards\Models\Deck::class);
+    }
+
+    /**
+     * Relationship to card progress
+     */
+    public function cardProgress()
+    {
+        return $this->hasMany(\App\Features\Flashcards\Models\UserCardProgress::class);
+    }
+
+    /**
      * Relationship to social accounts
      */
     public function socialAccounts()

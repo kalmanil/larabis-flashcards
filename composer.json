@@ -5,8 +5,12 @@
     "license": "proprietary",
     "autoload": {
         "psr-4": {
-            "App\\Features\\Auth\\": "app/Features/Auth/"
-        }
+            "App\\Features\\Auth\\": "app/Features/Auth/",
+            "App\\Features\\Flashcards\\": "app/Features/Flashcards/"
+        },
+        "classmap": [
+            "database/seeders"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

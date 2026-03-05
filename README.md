@@ -79,6 +79,7 @@ This tenant does not run standalone. Install and use it from the **Larabis root*
 | GET | `/admin` | `flashcards.dashboard` | Dashboard (Start learning, Add words, Browse words, My cards) |
 | GET | `/admin/words` | `flashcards.words.index` | Browse tenant word pool |
 | GET | `/admin/words/create` | `flashcards.words.create` | Add word form |
+| GET | `/admin/words/import` | `flashcards.words.import` | Import word data (query: `word`, `source`) |
 | POST | `/admin/words` | `flashcards.words.store` | Store word |
 | GET | `/admin/words/{id}/edit` | `flashcards.words.edit` | Edit word |
 | PUT | `/admin/words/{id}` | `flashcards.words.update` | Update word |

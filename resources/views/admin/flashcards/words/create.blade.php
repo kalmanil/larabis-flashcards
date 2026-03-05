@@ -21,7 +21,7 @@
 
         <div>
             <label class="block font-medium text-gray-700 mb-1">Hebrew form *</label>
-            <input type="text" name="form_text" value="{{ old('form_text') }}" required dir="rtl"
+            <input type="text" name="form_text" id="form_text" value="{{ old('form_text') }}" required dir="rtl"
                    class="w-full border rounded px-3 py-2 text-lg">
         </div>
 
@@ -34,23 +34,17 @@
                 @endforeach
             </select>
             <p class="text-sm text-gray-500 mt-1">Or add new:</p>
-            <input type="text" name="new_shoresh" value="{{ old('new_shoresh') }}" placeholder="e.g. כ־ת־ב" dir="rtl" class="w-full border rounded px-3 py-2 mt-1">
+            <input type="text" name="new_shoresh" id="new_shoresh" value="{{ old('new_shoresh') }}" placeholder="e.g. כ־ת־ב" dir="rtl" class="w-full border rounded px-3 py-2 mt-1">
         </div>
 
         <div>
             <label class="block font-medium text-gray-700 mb-1">Form type (e.g. binyan)</label>
-            <input type="text" name="form_type" value="{{ old('form_type') }}" class="w-full border rounded px-3 py-2">
+            <input type="text" name="form_type" id="form_type" value="{{ old('form_type') }}" class="w-full border rounded px-3 py-2">
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block font-medium text-gray-700 mb-1">Transcription (Russian)</label>
-                <input type="text" name="transcription_ru" value="{{ old('transcription_ru') }}" class="w-full border rounded px-3 py-2">
-            </div>
-            <div>
-                <label class="block font-medium text-gray-700 mb-1">Transcription (English)</label>
-                <input type="text" name="transcription_en" value="{{ old('transcription_en') }}" class="w-full border rounded px-3 py-2">
-            </div>
+        <div>
+            <label class="block font-medium text-gray-700 mb-1">Transcription (Russian)</label>
+            <input type="text" name="transcription_ru" id="transcription_ru" value="{{ old('transcription_ru') }}" class="w-full border rounded px-3 py-2">
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -72,17 +66,7 @@
                     <option value="{{ $t->id }}" {{ in_array($t->id, old('translation_ids', [])) ? 'selected' : '' }}>{{ $t->text }}</option>
                 @endforeach
             </select>
-            <textarea name="new_translations_ru" rows="2" class="w-full border rounded px-3 py-2 mt-1" placeholder="New RU translations, one per line">{{ is_array(old('new_translations_ru')) ? implode("\n", old('new_translations_ru')) : old('new_translations_ru') }}</textarea>
-        </div>
-
-        <div>
-            <label class="block font-medium text-gray-700 mb-1">Translations (English)</label>
-            <select name="translation_ids[]" multiple class="w-full border rounded px-3 py-2 h-24">
-                @foreach ($translationsEn as $t)
-                    <option value="{{ $t->id }}" {{ in_array($t->id, old('translation_ids', [])) ? 'selected' : '' }}>{{ $t->text }}</option>
-                @endforeach
-            </select>
-            <textarea name="new_translations_en" rows="2" class="w-full border rounded px-3 py-2 mt-1" placeholder="New EN translations, one per line">{{ is_array(old('new_translations_en')) ? implode("\n", old('new_translations_en')) : old('new_translations_en') }}</textarea>
+            <textarea name="new_translations_ru" id="new_translations_ru" rows="2" class="w-full border rounded px-3 py-2 mt-1" placeholder="New RU translations, one per line">{{ is_array(old('new_translations_ru')) ? implode("\n", old('new_translations_ru')) : old('new_translations_ru') }}</textarea>
         </div>
 
         <div>

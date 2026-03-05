@@ -10,19 +10,7 @@
     <form action="{{ route('flashcards.learn.start') }}" method="POST" class="space-y-6">
         @csrf
 
-        <div>
-            <label class="block font-medium text-gray-700 mb-2">Translation language</label>
-            <div class="flex gap-4">
-                <label class="inline-flex items-center">
-                    <input type="radio" name="lang" value="ru" {{ old('lang', 'ru') === 'ru' ? 'checked' : '' }}>
-                    <span class="ml-2">Russian</span>
-                </label>
-                <label class="inline-flex items-center">
-                    <input type="radio" name="lang" value="en" {{ old('lang') === 'en' ? 'checked' : '' }}>
-                    <span class="ml-2">English</span>
-                </label>
-            </div>
-        </div>
+        <input type="hidden" name="lang" value="ru">
 
         <div>
             <label class="block font-medium text-gray-700 mb-2">Question on front</label>

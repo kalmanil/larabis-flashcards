@@ -48,7 +48,7 @@
                     <tr>
                         <td class="px-4 py-2 text-lg" dir="rtl">{{ $word->form_text }}</td>
                         <td class="px-4 py-2">{{ $word->shoresh?->root ?? '—' }}</td>
-                        <td class="px-4 py-2 text-sm">{{ $word->transcription_ru ?? $word->transcription_en ?? '—' }}</td>
+                        <td class="px-4 py-2 text-sm">{{ $word->transcription_ru ?? '—' }}</td>
                         <td class="px-4 py-2 text-sm">
                             @foreach ($word->translations as $t)
                                 <span class="inline-block bg-gray-100 px-2 py-0.5 rounded text-xs mr-1">{{ $t->text }}</span>

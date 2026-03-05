@@ -31,26 +31,13 @@ class WordController
         return $deck;
     }
 
-    protected function syncTranslations(HebrewForm $form, array $translationIds, array $newRu = [], array $newEn = []): void
+    protected function syncTranslations(HebrewForm $form, array $translationIds, array $newRu = []): void
     {
         $ids = collect($translationIds)->filter()->values()->all();
 
         foreach ($newRu as $text) {
             if (trim($text)) {
                 $lang = Language::where('code', 'ru')->first();
-                if ($lang) {
-                    $t = Translation::firstOrCreate(
-                        ['language_id' => $lang->id, 'text' => trim($text)],
-                        ['language_id' => $lang->id, 'text' => trim($text)]
-                    );
-                    $ids[] = $t->id;
-                }
-            }
-        }
-
-        foreach ($newEn as $text) {
-            if (trim($text)) {
-                $lang = Language::where('code', 'en')->first();
                 if ($lang) {
                     $t = Translation::firstOrCreate(
                         ['language_id' => $lang->id, 'text' => trim($text)],
@@ -92,12 +79,10 @@ class WordController
     {
         $shoreshim = Shoresh::orderBy('root')->get();
         $translationsRu = Translation::whereHas('language', fn ($q) => $q->where('code', 'ru'))->orderBy('text')->get();
-        $translationsEn = Translation::whereHas('language', fn ($q) => $q->where('code', 'en'))->orderBy('text')->get();
 
         return TenancyHelper::view('flashcards.words.create', [
             'shoreshim' => $shoreshim,
             'translationsRu' => $translationsRu,
-            'translationsEn' => $translationsEn,
         ]);
     }
 
@@ -114,19 +99,16 @@ class WordController
             'form_text' => $request->form_text,
             'form_type' => $request->form_type,
             'transcription_ru' => $request->transcription_ru,
-            'transcription_en' => $request->transcription_en,
             'frequency_rank' => $request->frequency_rank,
             'frequency_per_million' => $request->frequency_per_million,
         ]);
 
         $newRu = is_array($request->new_translations_ru) ? $request->new_translations_ru : array_filter(array_map('trim', explode("\n", (string) $request->new_translations_ru)));
-        $newEn = is_array($request->new_translations_en) ? $request->new_translations_en : array_filter(array_map('trim', explode("\n", (string) $request->new_translations_en)));
 
         $this->syncTranslations(
             $form,
             $request->translation_ids ?? [],
-            $newRu,
-            $newEn
+            $newRu
         );
 
         if ($request->boolean('add_to_deck')) {
@@ -142,13 +124,11 @@ class WordController
     {
         $shoreshim = Shoresh::orderBy('root')->get();
         $translationsRu = Translation::whereHas('language', fn ($q) => $q->where('code', 'ru'))->orderBy('text')->get();
-        $translationsEn = Translation::whereHas('language', fn ($q) => $q->where('code', 'en'))->orderBy('text')->get();
 
         return TenancyHelper::view('flashcards.words.edit', [
             'word' => $hebrewForm,
             'shoreshim' => $shoreshim,
             'translationsRu' => $translationsRu,
-            'translationsEn' => $translationsEn,
         ]);
     }
 
@@ -165,19 +145,16 @@ class WordController
             'form_text' => $request->form_text,
             'form_type' => $request->form_type,
             'transcription_ru' => $request->transcription_ru,
-            'transcription_en' => $request->transcription_en,
             'frequency_rank' => $request->frequency_rank,
             'frequency_per_million' => $request->frequency_per_million,
         ]);
 
         $newRu = is_array($request->new_translations_ru) ? $request->new_translations_ru : array_filter(array_map('trim', explode("\n", (string) $request->new_translations_ru)));
-        $newEn = is_array($request->new_translations_en) ? $request->new_translations_en : array_filter(array_map('trim', explode("\n", (string) $request->new_translations_en)));
 
         $this->syncTranslations(
             $hebrewForm,
             $request->translation_ids ?? [],
-            $newRu,
-            $newEn
+            $newRu
         );
 
         return redirect()->route('flashcards.words.index')
@@ -198,5 +175,31 @@ class WordController
 
         return redirect()->back()
             ->with('success', 'Added to your deck.');
+    }
+
+    public function import(Request $request)
+    {
+        $word = trim((string) $request->query('word'));
+        $sourceKey = $request->query('source');
+
+        if ($word === '') {
+            return response()->json(['error' => 'Word is required'], 400, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $sources = [
+            // Add your source here, e.g. 'key' => new YourSource,
+        ];
+
+        $source = $sources[$sourceKey] ?? null;
+        if (!$source) {
+            return response()->json(['error' => 'No import source configured'], 400, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $data = $source->fetch($word);
+        if ($data === null) {
+            return response()->json(['error' => 'No data found'], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        return response()->json($data, 200, [], JSON_UNESCAPED_UNICODE);
     }
 }

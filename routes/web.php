@@ -49,6 +49,7 @@ Route::middleware('auth')->prefix('admin')->name('flashcards.')->group(function 
     // Words (tenant pool)
     Route::get('/words', [WordController::class, 'index'])->name('words.index');
     Route::get('/words/create', [WordController::class, 'create'])->name('words.create');
+    Route::get('/words/import', [WordController::class, 'import'])->name('words.import');
     Route::post('/words', [WordController::class, 'store'])->name('words.store');
     Route::get('/words/{hebrewForm}/edit', [WordController::class, 'edit'])->name('words.edit');
     Route::put('/words/{hebrewForm}', [WordController::class, 'update'])->name('words.update');

@@ -46,7 +46,7 @@ class LearnController
     public function startSession(Request $request)
     {
         $request->validate([
-            'lang' => 'required|in:ru,en',
+            'lang' => 'required|in:ru',
             'front_type' => 'required|in:hebrew,transcription,translation,random',
         ]);
 
@@ -96,8 +96,7 @@ class LearnController
         $translations = $sessionTranslations->isNotEmpty()
             ? $sessionTranslations->pluck('text')->implode(', ')
             : $hebrewForm->translations->pluck('text')->implode(', ');
-        $transcription = $learn['lang'] === 'ru' ? $hebrewForm->transcription_ru : $hebrewForm->transcription_en;
-        $transcription = $transcription ?? $hebrewForm->transcription_ru ?? $hebrewForm->transcription_en ?? '—';
+        $transcription = $hebrewForm->transcription_ru ?? '—';
 
         $frontType = $learn['front_type'];
         if ($frontType === 'random') {

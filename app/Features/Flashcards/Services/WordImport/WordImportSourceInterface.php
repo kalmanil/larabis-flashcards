@@ -16,7 +16,22 @@ interface WordImportSourceInterface
 
     /**
      * Fetch word data for the given Hebrew form text.
-     * Returns array with keys: transcription_ru, translations_ru, shoresh_root, form_type.
+     *
+     * Expected return shape:
+     * [
+     *   'transcription_ru' => string|null,
+     *   'shoresh_root' => string|null,
+     *   'frequency_rank' => int|float|null,
+     *   'frequency_per_million' => int|float|null,
+     *   'entries' => [
+     *     [
+     *       'translation_ru' => string,
+     *       'form_type' => string|null,
+     *     ],
+     *     ...
+     *   ],
+     * ]
+     *
      * Missing keys can be omitted.
      */
     public function fetch(string $hebrewFormText): ?array;

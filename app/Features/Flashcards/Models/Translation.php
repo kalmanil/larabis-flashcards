@@ -18,6 +18,7 @@ class Translation extends Model
     public function hebrewForms(): BelongsToMany
     {
         return $this->belongsToMany(HebrewForm::class, 'hebrew_form_translation')
-            ->withTimestamps();
+            ->withTimestamps()
+            ->withPivot(['form_type', 'sense_order']);
     }
 }

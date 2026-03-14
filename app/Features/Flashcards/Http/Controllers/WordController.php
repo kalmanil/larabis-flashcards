@@ -6,6 +6,7 @@ use App\Features\Flashcards\Models\HebrewForm;
 use App\Features\Flashcards\Models\Language;
 use App\Features\Flashcards\Models\Shoresh;
 use App\Features\Flashcards\Models\Translation;
+use App\Features\Flashcards\Services\WordImport\GeminiWordImportSource;
 use App\Features\Flashcards\Http\Requests\StoreHebrewFormRequest;
 use App\Features\Flashcards\Http\Requests\UpdateHebrewFormRequest;
 use App\Helpers\TenancyHelper;
@@ -31,24 +32,65 @@ class WordController
         return $deck;
     }
 
-    protected function syncTranslations(HebrewForm $form, array $translationIds, array $newRu = []): void
+    protected function syncTranslations(HebrewForm $form, array $translationIds, array $newRu = [], array $newEntries = []): void
     {
-        $ids = collect($translationIds)->filter()->values()->all();
+        $lang = Language::where('code', 'ru')->first();
 
-        foreach ($newRu as $text) {
-            if (trim($text)) {
-                $lang = Language::where('code', 'ru')->first();
-                if ($lang) {
-                    $t = Translation::firstOrCreate(
-                        ['language_id' => $lang->id, 'text' => trim($text)],
-                        ['language_id' => $lang->id, 'text' => trim($text)]
-                    );
-                    $ids[] = $t->id;
+        $syncData = [];
+
+        // Existing translations selected from the multiselect (no extra pivot data)
+        foreach (collect($translationIds)->filter() as $id) {
+            $syncData[$id] = [];
+        }
+
+        // Structured new entries: translation + form_type (+ implied sense order)
+        if ($lang && !empty($newEntries)) {
+            foreach ($newEntries as $index => $entry) {
+                $text = trim((string) ($entry['translation_ru'] ?? ''));
+                if ($text === '') {
+                    continue;
+                }
+
+                $t = Translation::firstOrCreate(
+                    ['language_id' => $lang->id, 'text' => $text],
+                    ['language_id' => $lang->id, 'text' => $text]
+                );
+
+                $formType = isset($entry['form_type']) && trim((string) $entry['form_type']) !== ''
+                    ? trim((string) $entry['form_type'])
+                    : null;
+
+                $syncData[$t->id] = [
+                    'form_type' => $formType,
+                    'sense_order' => $index + 1,
+                ];
+            }
+        }
+
+        // Legacy support: plain list of new RU translations (no per-sense form type)
+        if ($lang && !empty($newRu)) {
+            foreach ($newRu as $text) {
+                $text = trim((string) $text);
+                if ($text === '') {
+                    continue;
+                }
+
+                $t = Translation::firstOrCreate(
+                    ['language_id' => $lang->id, 'text' => $text],
+                    ['language_id' => $lang->id, 'text' => $text]
+                );
+
+                if (!array_key_exists($t->id, $syncData)) {
+                    $syncData[$t->id] = [];
                 }
             }
         }
 
-        $form->translations()->sync(array_unique($ids));
+        if (empty($syncData)) {
+            $form->translations()->sync([]);
+        } else {
+            $form->translations()->sync($syncData);
+        }
     }
 
     public function index(Request $request)
@@ -104,11 +146,13 @@ class WordController
         ]);
 
         $newRu = is_array($request->new_translations_ru) ? $request->new_translations_ru : array_filter(array_map('trim', explode("\n", (string) $request->new_translations_ru)));
+        $newEntries = $request->input('new_entries', []);
 
         $this->syncTranslations(
             $form,
             $request->translation_ids ?? [],
-            $newRu
+            $newRu,
+            $newEntries
         );
 
         if ($request->boolean('add_to_deck')) {
@@ -150,11 +194,13 @@ class WordController
         ]);
 
         $newRu = is_array($request->new_translations_ru) ? $request->new_translations_ru : array_filter(array_map('trim', explode("\n", (string) $request->new_translations_ru)));
+        $newEntries = $request->input('new_entries', []);
 
         $this->syncTranslations(
             $hebrewForm,
             $request->translation_ids ?? [],
-            $newRu
+            $newRu,
+            $newEntries
         );
 
         return redirect()->route('flashcards.words.index')
@@ -187,7 +233,7 @@ class WordController
         }
 
         $sources = [
-            // Add your source here, e.g. 'key' => new YourSource,
+            'gemini' => app(GeminiWordImportSource::class),
         ];
 
         $source = $sources[$sourceKey] ?? null;
@@ -199,7 +245,6 @@ class WordController
         if ($data === null) {
             return response()->json(['error' => 'No data found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
-
         return response()->json($data, 200, [], JSON_UNESCAPED_UNICODE);
     }
 }

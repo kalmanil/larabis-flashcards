@@ -56,22 +56,75 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block font-medium text-gray-700 mb-1">Frequency rank</label>
-                            <input type="number" name="frequency_rank" value="{{ old('frequency_rank', $word->frequency_rank) }}" min="1" class="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <input type="number" name="frequency_rank" id="frequency_rank" value="{{ old('frequency_rank', $word->frequency_rank) }}" min="1" class="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                         </div>
                         <div>
                             <label class="block font-medium text-gray-700 mb-1">Frequency per million</label>
-                            <input type="number" name="frequency_per_million" value="{{ old('frequency_per_million', $word->frequency_per_million) }}" step="0.01" min="0" class="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <input type="number" name="frequency_per_million" id="frequency_per_million" value="{{ old('frequency_per_million', $word->frequency_per_million) }}" step="0.01" min="0" class="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                         </div>
                     </div>
 
                     <div>
                         <label class="block font-medium text-gray-700 mb-1">Translations (Russian)</label>
+                        <p class="text-sm text-gray-500 mb-1">Select existing or add new senses below (each with its own form type)</p>
                         <select name="translation_ids[]" multiple class="w-full border border-gray-200 rounded-xl px-3 py-2 h-24 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                             @foreach ($translationsRu as $t)
                                 <option value="{{ $t->id }}" {{ in_array($t->id, old('translation_ids', $word->translations->pluck('id')->toArray())) ? 'selected' : '' }}>{{ $t->text }}</option>
                             @endforeach
                         </select>
-                        <textarea name="new_translations_ru" id="new_translations_ru" rows="2" class="w-full border border-gray-200 rounded-xl px-3 py-2 mt-1 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="New RU translations, one per line">{{ is_array(old('new_translations_ru')) ? implode("\n", old('new_translations_ru')) : old('new_translations_ru') }}</textarea>
+                        @php
+                            $oldEntries = old('new_entries');
+                        @endphp
+                        <div class="mt-3">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">Senses for this word</span>
+                                <button type="button" id="add-entry-row" class="text-sm text-indigo-600 hover:underline">+ Add sense</button>
+                            </div>
+                            <div id="entries-container" class="space-y-2">
+                                @if (is_array($oldEntries))
+                                    @foreach ($oldEntries as $idx => $entry)
+                                        <div class="grid grid-cols-2 gap-2 entry-row">
+                                            <input type="text"
+                                                   name="new_entries[{{ $idx }}][translation_ru]"
+                                                   value="{{ $entry['translation_ru'] ?? '' }}"
+                                                   class="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                   placeholder="Translation (RU)">
+                                            <input type="text"
+                                                   name="new_entries[{{ $idx }}][form_type]"
+                                                   value="{{ $entry['form_type'] ?? '' }}"
+                                                   class="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                   placeholder="Form type (e.g. noun (masc.))">
+                                        </div>
+                                    @endforeach
+                                @elseif($word->translations && $word->translations->count())
+                                    @foreach ($word->translations as $idx => $t)
+                                        <div class="grid grid-cols-2 gap-2 entry-row">
+                                            <input type="text"
+                                                   name="new_entries[{{ $idx }}][translation_ru]"
+                                                   value="{{ $t->text }}"
+                                                   class="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                   placeholder="Translation (RU)">
+                                            <input type="text"
+                                                   name="new_entries[{{ $idx }}][form_type]"
+                                                   value="{{ $t->pivot->form_type ?? '' }}"
+                                                   class="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                   placeholder="Form type (e.g. noun (masc.))">
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <div class="grid grid-cols-2 gap-2 entry-row">
+                                        <input type="text"
+                                               name="new_entries[0][translation_ru]"
+                                               class="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                               placeholder="Translation (RU)">
+                                        <input type="text"
+                                               name="new_entries[0][form_type]"
+                                               class="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                               placeholder="Form type (e.g. noun (masc.))">
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
                     </div>
 
                     <div class="flex gap-4 pt-2">
@@ -83,4 +136,27 @@
         </div>
     </div>
 </div>
+<script>
+    (function () {
+        const container = document.getElementById('entries-container');
+        const addBtn = document.getElementById('add-entry-row');
+        if (!container || !addBtn) {
+            return;
+        }
+        function createEntryRow(index) {
+            const row = document.createElement('div');
+            row.className = 'grid grid-cols-2 gap-2 entry-row';
+            row.innerHTML = '' +
+                '<input type="text" name="new_entries[' + index + '][translation_ru]" class="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Translation (RU)">' +
+                '<input type="text" name="new_entries[' + index + '][form_type]" class="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Form type (e.g. noun (masc.))">';
+            return row;
+        }
+        let index = container.querySelectorAll('.entry-row').length;
+        addBtn.addEventListener('click', function () {
+            const row = createEntryRow(index);
+            container.appendChild(row);
+            index++;
+        });
+    })();
+</script>
 @endsection

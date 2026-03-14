@@ -32,7 +32,8 @@ class HebrewForm extends Model
     public function translations(): BelongsToMany
     {
         return $this->belongsToMany(Translation::class, 'hebrew_form_translation')
-            ->withTimestamps();
+            ->withTimestamps()
+            ->withPivot(['form_type', 'sense_order']);
     }
 
     public function deckCards(): HasMany

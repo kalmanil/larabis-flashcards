@@ -24,6 +24,9 @@ class UpdateHebrewFormRequest extends FormRequest
             'translation_ids' => 'nullable|array',
             'translation_ids.*' => 'exists:translations,id',
             'new_translations_ru' => 'nullable',
+            'new_entries' => 'nullable|array',
+            'new_entries.*.translation_ru' => 'nullable|string|max:255',
+            'new_entries.*.form_type' => 'nullable|string|max:100',
         ];
     }
 }

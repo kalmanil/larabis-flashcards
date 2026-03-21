@@ -15,15 +15,10 @@ class StoreHebrewFormRequest extends FormRequest
     {
         return [
             'form_text' => 'required|string|max:255',
-            'shoresh_id' => 'nullable|exists:shoresh,id',
-            'new_shoresh' => 'nullable|string|max:100',
-            'form_type' => 'nullable|string|max:100',
+            'shoresh_root' => 'nullable|string|max:100',
             'transcription_ru' => 'nullable|string|max:255',
             'frequency_rank' => 'nullable|integer|min:1',
             'frequency_per_million' => 'nullable|numeric|min:0',
-            'translation_ids' => 'nullable|array',
-            'translation_ids.*' => 'exists:translations,id',
-            'new_translations_ru' => 'nullable',
             'new_entries' => 'nullable|array',
             'new_entries.*.translation_ru' => 'nullable|string|max:255',
             'new_entries.*.form_type' => 'nullable|string|max:100',

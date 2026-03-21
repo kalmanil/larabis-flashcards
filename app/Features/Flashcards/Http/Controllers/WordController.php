@@ -6,6 +6,7 @@ use App\Features\Flashcards\Models\HebrewForm;
 use App\Features\Flashcards\Models\Language;
 use App\Features\Flashcards\Models\Shoresh;
 use App\Features\Flashcards\Models\Translation;
+use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
 use App\Features\Flashcards\Services\WordImport\GeminiWordImportSource;
 use App\Features\Flashcards\Http\Requests\StoreHebrewFormRequest;
 use App\Features\Flashcards\Http\Requests\UpdateHebrewFormRequest;
@@ -119,41 +120,29 @@ class WordController
 
     public function create()
     {
-        $shoreshim = Shoresh::orderBy('root')->get();
-        $translationsRu = Translation::whereHas('language', fn ($q) => $q->where('code', 'ru'))->orderBy('text')->get();
-
-        return TenancyHelper::view('flashcards.words.create', [
-            'shoreshim' => $shoreshim,
-            'translationsRu' => $translationsRu,
-        ]);
+        return TenancyHelper::view('flashcards.words.create');
     }
 
     public function store(StoreHebrewFormRequest $request)
     {
-        $shoreshId = $request->shoresh_id;
-        if ($request->filled('new_shoresh')) {
-            $shoresh = Shoresh::firstOrCreate(['root' => trim($request->new_shoresh)]);
+        $shoreshId = null;
+        $root = trim((string) $request->input('shoresh_root', ''));
+        if ($root !== '') {
+            $shoresh = Shoresh::firstOrCreate(['root' => $root]);
             $shoreshId = $shoresh->id;
         }
 
         $form = HebrewForm::create([
             'shoresh_id' => $shoreshId,
             'form_text' => $request->form_text,
-            'form_type' => $request->form_type,
-            'transcription_ru' => $request->transcription_ru,
+            'transcription_ru' => TranscriptionRuNormalizer::normalize($request->transcription_ru),
             'frequency_rank' => $request->frequency_rank,
             'frequency_per_million' => $request->frequency_per_million,
         ]);
 
-        $newRu = is_array($request->new_translations_ru) ? $request->new_translations_ru : array_filter(array_map('trim', explode("\n", (string) $request->new_translations_ru)));
         $newEntries = $request->input('new_entries', []);
 
-        $this->syncTranslations(
-            $form,
-            $request->translation_ids ?? [],
-            $newRu,
-            $newEntries
-        );
+        $this->syncTranslations($form, [], [], $newEntries);
 
         if ($request->boolean('add_to_deck')) {
             $deck = $this->ensureDefaultDeck();
@@ -166,42 +155,31 @@ class WordController
 
     public function edit(HebrewForm $hebrewForm)
     {
-        $shoreshim = Shoresh::orderBy('root')->get();
-        $translationsRu = Translation::whereHas('language', fn ($q) => $q->where('code', 'ru'))->orderBy('text')->get();
-
         return TenancyHelper::view('flashcards.words.edit', [
             'word' => $hebrewForm,
-            'shoreshim' => $shoreshim,
-            'translationsRu' => $translationsRu,
         ]);
     }
 
     public function update(UpdateHebrewFormRequest $request, HebrewForm $hebrewForm)
     {
-        $shoreshId = $request->shoresh_id;
-        if ($request->filled('new_shoresh')) {
-            $shoresh = Shoresh::firstOrCreate(['root' => trim($request->new_shoresh)]);
+        $shoreshId = null;
+        $root = trim((string) $request->input('shoresh_root', ''));
+        if ($root !== '') {
+            $shoresh = Shoresh::firstOrCreate(['root' => $root]);
             $shoreshId = $shoresh->id;
         }
 
         $hebrewForm->update([
             'shoresh_id' => $shoreshId,
             'form_text' => $request->form_text,
-            'form_type' => $request->form_type,
-            'transcription_ru' => $request->transcription_ru,
+            'transcription_ru' => TranscriptionRuNormalizer::normalize($request->transcription_ru),
             'frequency_rank' => $request->frequency_rank,
             'frequency_per_million' => $request->frequency_per_million,
         ]);
 
-        $newRu = is_array($request->new_translations_ru) ? $request->new_translations_ru : array_filter(array_map('trim', explode("\n", (string) $request->new_translations_ru)));
         $newEntries = $request->input('new_entries', []);
 
-        $this->syncTranslations(
-            $hebrewForm,
-            $request->translation_ids ?? [],
-            $newRu,
-            $newEntries
-        );
+        $this->syncTranslations($hebrewForm, [], [], $newEntries);
 
         return redirect()->route('flashcards.words.index')
             ->with('success', 'Word updated.');

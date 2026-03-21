@@ -2,6 +2,7 @@
 
 namespace App\Features\Flashcards\Services\WordImport;
 
+use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
 use Illuminate\Support\Facades\Http;
 
 class GeminiWordImportSource implements WordImportSourceInterface
@@ -27,14 +28,14 @@ class GeminiWordImportSource implements WordImportSourceInterface
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . urlencode($apiKey);
 
         $prompt = "Analyze the Hebrew word '" . $hebrewFormText . "' and return a JSON object with exactly these keys: "
-            . "'transcription_ru' (string): Russian transliteration/pronunciation, must be fully lowercase and the stressed vowel/letter must be marked with an acute accent (´) over it (e.g., prímer). "
+            . "'transcription_ru' (string): Russian transliteration/pronunciation, fully lowercase. Mark the stressed vowel using the Unicode combining acute accent (U+0301) placed immediately after that vowel only (e.g. shálom = s-h-a-acute-l-o-m). Use no other stress markers. "
             . "'shoresh_root' (string): The 2 or 4 letter Hebrew root (no hyphens - e.g., קדם). "
             . "'frequency_rank' (number): frequency rank of the word. "
             . "'frequency_per_million' (number): usage frequency per million words. "
-            . "'entries' (array of objects): each object describes one main sense/translation and has: "
-            . "'translation_ru' (string): Russian translation for this sense. "
-            . "'form_type' (string): part of speech or grammatical/inflectional form for this sense in english (e.g., adverb, noun (masc.), verb – hif'il infinitive). "
-            . "Return ONLY valid JSON, with no extra commentary or code fences.";
+            . "'entries' (array of objects): each object is one sense with exactly one most fitting Russian translation: "
+            . "'translation_ru' (string): the single best Russian translation for this sense. "
+            . "'form_type' (string): part of speech or grammatical form in English (e.g., adverb, noun (masc.), verb – hif'il infinitive). "
+            . "Return only one translation per sense. Return ONLY valid JSON, with no extra commentary or code fences.";
 
         $payload = [
             'contents' => [
@@ -90,8 +91,13 @@ class GeminiWordImportSource implements WordImportSourceInterface
         $frequencyRank = $inner['frequency_rank'] ?? ($inner['frequencyRank'] ?? null);
         $frequencyPerMillion = $inner['frequency_per_million'] ?? ($inner['frequencyPerMillion'] ?? null);
 
+        $transcriptionRu = isset($inner['transcription_ru']) ? (string) $inner['transcription_ru'] : null;
+        if ($transcriptionRu !== null && $transcriptionRu !== '') {
+            $transcriptionRu = TranscriptionRuNormalizer::normalize($transcriptionRu);
+        }
+
         return [
-            'transcription_ru' => isset($inner['transcription_ru']) ? (string) $inner['transcription_ru'] : null,
+            'transcription_ru' => $transcriptionRu,
             'shoresh_root' => isset($inner['shoresh_root']) ? (string) $inner['shoresh_root'] : null,
             'frequency_rank' => $frequencyRank !== null ? (float) $frequencyRank : null,
             'frequency_per_million' => $frequencyPerMillion !== null ? (float) $frequencyPerMillion : null,

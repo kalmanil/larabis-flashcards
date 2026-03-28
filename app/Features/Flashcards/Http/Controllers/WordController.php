@@ -6,14 +6,15 @@ use App\Features\Flashcards\Models\HebrewForm;
 use App\Features\Flashcards\Models\Language;
 use App\Features\Flashcards\Models\Shoresh;
 use App\Features\Flashcards\Models\Translation;
+use App\Features\Flashcards\Services\BulkWordLineParser;
 use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
 use App\Features\Flashcards\Services\WordImport\GeminiWordImportSource;
+use App\Features\Flashcards\Http\Requests\BulkQueueHebrewWordsRequest;
 use App\Features\Flashcards\Http\Requests\StoreHebrewFormRequest;
 use App\Features\Flashcards\Http\Requests\UpdateHebrewFormRequest;
 use App\Helpers\TenancyHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 
 class WordController
 {
@@ -123,6 +124,77 @@ class WordController
         return TenancyHelper::view('flashcards.words.create');
     }
 
+    public function bulkCreate()
+    {
+        return TenancyHelper::view('flashcards.words.bulk-create');
+    }
+
+    public function bulkQueue(BulkQueueHebrewWordsRequest $request)
+    {
+        $unique = BulkWordLineParser::uniqueLines((string) $request->input('lines'));
+        $added = 0;
+        $skipped = 0;
+
+        foreach ($unique as $w) {
+            if (HebrewForm::where('form_text', $w)->exists()) {
+                $skipped++;
+                continue;
+            }
+
+            HebrewForm::create([
+                'shoresh_id' => null,
+                'form_text' => $w,
+                'transcription_ru' => null,
+                'frequency_rank' => null,
+                'frequency_per_million' => null,
+            ]);
+            $added++;
+        }
+
+        if ($added === 0) {
+            $msg = 'No new words to add.';
+            if ($skipped > 0) {
+                $msg .= ' ('.$skipped.' already in the list.)';
+            }
+
+            return redirect()->route('flashcards.dashboard')
+                ->with('info', $msg);
+        }
+
+        $msg = 'Saved '.$added.' word(s) to the database.';
+        if ($skipped > 0) {
+            $msg .= ' Skipped '.$skipped.' already in the list.';
+        }
+        $msg .= ' Use Process new words on the dashboard to add Russian translations and other details.';
+
+        return redirect()->route('flashcards.dashboard')
+            ->with('success', $msg);
+    }
+
+    public function processPendingWords(Request $request)
+    {
+        $pendingTotal = HebrewForm::pendingEnrichment()->count();
+        if ($pendingTotal === 0) {
+            return redirect()->route('flashcards.dashboard')
+                ->with('info', 'No words missing Russian translations.');
+        }
+
+        $word = HebrewForm::pendingEnrichment()
+            ->orderBy('id')
+            ->with(['shoresh', 'translations'])
+            ->firstOrFail();
+
+        $pendingPosition = HebrewForm::pendingEnrichment()
+            ->where('id', '<', $word->id)
+            ->count() + 1;
+
+        return TenancyHelper::view('flashcards.words.process-pending', [
+            'word' => $word,
+            'pendingPosition' => $pendingPosition,
+            'pendingTotal' => $pendingTotal,
+        ]);
+    }
+
     public function store(StoreHebrewFormRequest $request)
     {
         $shoreshId = null;
@@ -180,6 +252,16 @@ class WordController
         $newEntries = $request->input('new_entries', []);
 
         $this->syncTranslations($hebrewForm, [], [], $newEntries);
+
+        if ($request->boolean('enrichment_flow')) {
+            if (HebrewForm::pendingEnrichment()->exists()) {
+                return redirect()->route('flashcards.words.process-pending')
+                    ->with('success', 'Saved. Next word.');
+            }
+
+            return redirect()->route('flashcards.dashboard')
+                ->with('success', 'All words now have at least one Russian translation.');
+        }
 
         return redirect()->route('flashcards.words.index')
             ->with('success', 'Word updated.');

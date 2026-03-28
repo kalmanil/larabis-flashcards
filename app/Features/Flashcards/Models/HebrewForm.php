@@ -2,6 +2,7 @@
 
 namespace App\Features\Flashcards\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -23,6 +24,18 @@ class HebrewForm extends Model
         'frequency_rank' => 'integer',
         'frequency_per_million' => 'float',
     ];
+
+    /**
+     * Words that still need the “process new words” step: no Russian translation linked yet.
+     */
+    public function scopePendingEnrichment(Builder $query): Builder
+    {
+        return $query->whereDoesntHave('translations', function ($q) {
+            $q->whereHas('language', function ($l) {
+                $l->where('code', 'ru');
+            });
+        });
+    }
 
     public function shoresh(): BelongsTo
     {

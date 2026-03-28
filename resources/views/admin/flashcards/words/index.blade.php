@@ -6,14 +6,23 @@
 <div class="container mx-auto px-4 py-8">
     <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
         <h1 class="text-3xl font-bold">Browse Words</h1>
-        <a href="{{ route('flashcards.words.create') }}"
-           class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-center shrink-0">
-            Add word
-        </a>
+        <div class="flex flex-col sm:flex-row gap-2 sm:justify-end shrink-0">
+            <a href="{{ route('flashcards.words.bulk-create') }}"
+               class="px-4 py-2 border border-gray-300 bg-white text-gray-800 rounded-lg hover:bg-gray-50 font-medium text-center">
+                Bulk add
+            </a>
+            <a href="{{ route('flashcards.words.create') }}"
+               class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-center">
+                Add word
+            </a>
+        </div>
     </div>
 
     @if (session('success'))
         <div class="mb-4 p-4 bg-green-100 text-green-800 rounded-lg">{{ session('success') }}</div>
+    @endif
+    @if (session('info'))
+        <div class="mb-4 p-4 bg-blue-100 text-blue-800 rounded-lg">{{ session('info') }}</div>
     @endif
 
     <form method="GET" class="mb-6 flex gap-4 flex-wrap">
@@ -70,7 +79,7 @@
             </div>
         @empty
             <div class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-                No words yet. <a href="{{ route('flashcards.words.create') }}" class="text-indigo-600">Add one</a>.
+                No words yet. <a href="{{ route('flashcards.words.create') }}" class="text-indigo-600">Add one</a> or <a href="{{ route('flashcards.words.bulk-create') }}" class="text-indigo-600">bulk add</a>.
             </div>
         @endforelse
     </div>

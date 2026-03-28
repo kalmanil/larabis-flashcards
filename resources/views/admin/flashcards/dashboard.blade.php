@@ -5,7 +5,31 @@
 @section('content')
 <div class="container mx-auto px-4 py-8">
     <div class="max-w-2xl mx-auto">
-        <h1 class="text-4xl font-bold mb-6">Flashcards</h1>
+        <h1 class="text-4xl font-bold mb-4">Flashcards</h1>
+
+        @if (session('success'))
+            <div class="mb-4 p-4 bg-green-100 text-green-800 rounded-lg">{{ session('success') }}</div>
+        @endif
+        @if (session('info'))
+            <div class="mb-4 p-4 bg-blue-100 text-blue-800 rounded-lg">{{ session('info') }}</div>
+        @endif
+
+        <nav class="mb-8 p-4 bg-gray-50 border-2 border-gray-200 rounded-xl" aria-label="App menu">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Menu</p>
+            <div class="flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium">
+                <a href="{{ route('flashcards.learn.config') }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">Learn</a>
+                <span class="text-gray-300" aria-hidden="true">|</span>
+                <a href="{{ route('flashcards.words.index') }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">Words</a>
+                <span class="text-gray-300" aria-hidden="true">|</span>
+                <a href="{{ route('flashcards.words.bulk-create') }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">Bulk add</a>
+                <span class="text-gray-300" aria-hidden="true">|</span>
+                <a href="{{ route('flashcards.words.process-pending') }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">Process new words{{ ($pendingEnrichmentCount ?? 0) > 0 ? ' ('.$pendingEnrichmentCount.')' : '' }}</a>
+                <span class="text-gray-300" aria-hidden="true">|</span>
+                <a href="{{ route('flashcards.words.create') }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">Add word</a>
+                <span class="text-gray-300" aria-hidden="true">|</span>
+                <a href="{{ route('flashcards.decks.index') }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">Decks</a>
+            </div>
+        </nav>
 
         <div class="space-y-4">
             <a href="{{ route('flashcards.learn.config') }}"
@@ -16,6 +40,18 @@
             <a href="{{ route('flashcards.words.create') }}"
                class="block w-full p-6 bg-white hover:bg-gray-50 border-2 border-gray-200 rounded-xl shadow text-center font-semibold text-lg transition-colors">
                 Add words
+            </a>
+
+            <a href="{{ route('flashcards.words.bulk-create') }}"
+               class="block w-full p-6 bg-white hover:bg-gray-50 border-2 border-gray-200 rounded-xl shadow text-center font-semibold text-lg transition-colors">
+                Bulk add words
+            </a>
+
+            <a href="{{ route('flashcards.words.process-pending') }}"
+               class="block w-full p-6 bg-white hover:bg-gray-50 border-2 border-gray-200 rounded-xl shadow text-center font-semibold text-lg transition-colors">
+                Process new words @if(($pendingEnrichmentCount ?? 0) > 0)
+                    <span class="text-indigo-600">({{ $pendingEnrichmentCount }} pending)</span>
+                @endif
             </a>
 
             <a href="{{ route('flashcards.words.index') }}"

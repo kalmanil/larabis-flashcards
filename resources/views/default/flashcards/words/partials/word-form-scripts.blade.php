@@ -10,13 +10,27 @@
 
         function createEntryRow(index, translation, formType, transcriptionOverride) {
             const row = document.createElement('div');
-            row.className = 'grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center';
+            row.className = 'entry-row relative border border-gray-200 rounded-xl p-4 space-y-3 bg-gray-50/80 shadow-sm';
             row.innerHTML = '' +
-                '<input type="text" name="new_entries[' + index + '][translation_ru]" class="w-full ' + inputBorder + '" placeholder="Translation (RU)">' +
-                '<input type="text" name="new_entries[' + index + '][form_type]" class="w-full ' + inputBorder + '" placeholder="Form type (e.g. noun (masc.))">' +
-                '<input type="text" name="new_entries[' + index + '][transcription_ru]" class="w-full ' + inputBorder + '" placeholder="If different from default">' +
-                '<button type="button" class="entry-transcription-stress ' + btnStressSmall + '" title="Cycle stress to next vowel (left to right)">Stress</button>' +
-                '<button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>';
+                '<div class="flex items-center justify-between gap-2">' +
+                '<span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Sense</span>' +
+                '<button type="button" class="entry-delete min-h-[2.5rem] min-w-[2.5rem] inline-flex items-center justify-center text-lg leading-none text-red-600 hover:bg-red-50 rounded-lg active:bg-red-100" title="Remove sense">×</button>' +
+                '</div>' +
+                '<div class="space-y-1">' +
+                '<label class="block text-xs font-medium text-gray-600">Translation (RU)</label>' +
+                '<input type="text" name="new_entries[' + index + '][translation_ru]" class="w-full ' + inputBorder + '" placeholder="Translation (RU)" autocomplete="off">' +
+                '</div>' +
+                '<div class="space-y-1">' +
+                '<label class="block text-xs font-medium text-gray-600">Form type</label>' +
+                '<input type="text" name="new_entries[' + index + '][form_type]" class="w-full ' + inputBorder + '" placeholder="e.g. noun (masc.)" autocomplete="off">' +
+                '</div>' +
+                '<div class="space-y-1">' +
+                '<label class="block text-xs font-medium text-gray-600">Transcription if different</label>' +
+                '<div class="flex gap-2 items-stretch">' +
+                '<input type="text" name="new_entries[' + index + '][transcription_ru]" class="flex-1 min-w-0 ' + inputBorder + '" placeholder="Leave empty to use default above" autocomplete="off">' +
+                '<button type="button" class="entry-transcription-stress shrink-0 ' + btnStressSmall + '" title="Cycle stress to next vowel (left to right)">Stress</button>' +
+                '</div>' +
+                '</div>';
             row.querySelector('input[name*="[translation_ru]"]').value = translation || '';
             row.querySelector('input[name*="[form_type]"]').value = formType || '';
             row.querySelector('input[name*="[transcription_ru]"]').value = transcriptionOverride || '';

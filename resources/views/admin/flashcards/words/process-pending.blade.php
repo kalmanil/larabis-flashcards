@@ -67,7 +67,7 @@
 
         <div>
             <label class="block font-medium text-gray-700 mb-1">Translations (Russian)</label>
-            <p class="text-sm text-gray-500 mb-1">Each sense: translation + form type. Links existing or creates if missing.</p>
+            <p class="text-sm text-gray-500 mb-1">Each sense is a separate block (translation, form type, optional transcription). Links existing or creates if missing.</p>
             @php
                 $oldEntries = old('new_entries');
             @endphp
@@ -76,68 +76,32 @@
                     <span class="text-sm font-medium text-gray-700">Senses</span>
                     <button type="button" id="add-entry-row" class="text-sm text-indigo-600 hover:underline">+ Add sense</button>
                 </div>
-                <div id="entries-container" class="space-y-2">
+                <div id="entries-container" class="space-y-3">
                     @if (is_array($oldEntries))
                         @foreach ($oldEntries as $idx => $entry)
-                            <div class="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center">
-                                <input type="text"
-                                       name="new_entries[{{ $idx }}][translation_ru]"
-                                       value="{{ $entry['translation_ru'] ?? '' }}"
-                                       class="w-full border rounded px-3 py-2"
-                                       placeholder="Translation (RU)">
-                                <input type="text"
-                                       name="new_entries[{{ $idx }}][form_type]"
-                                       value="{{ $entry['form_type'] ?? '' }}"
-                                       class="w-full border rounded px-3 py-2"
-                                       placeholder="Form type (e.g. noun (masc.))">
-                                <input type="text"
-                                       name="new_entries[{{ $idx }}][transcription_ru]"
-                                       value="{{ $entry['transcription_ru'] ?? '' }}"
-                                       class="w-full border rounded px-3 py-2"
-                                       placeholder="If different from default">
-                                <button type="button" class="entry-transcription-stress px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded hover:bg-gray-300 shrink-0" title="Cycle stress to next vowel (left to right)">Stress</button>
-                                <button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>
-                            </div>
+                            @include('admin.flashcards.words.partials.word-form-sense-row', [
+                                'idx' => $idx,
+                                'translationRu' => $entry['translation_ru'] ?? '',
+                                'formType' => $entry['form_type'] ?? '',
+                                'transcriptionRu' => $entry['transcription_ru'] ?? '',
+                            ])
                         @endforeach
                     @elseif($word->translations && $word->translations->count())
                         @foreach ($word->translations as $idx => $t)
-                            <div class="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center">
-                                <input type="text"
-                                       name="new_entries[{{ $idx }}][translation_ru]"
-                                       value="{{ $t->text }}"
-                                       class="w-full border rounded px-3 py-2"
-                                       placeholder="Translation (RU)">
-                                <input type="text"
-                                       name="new_entries[{{ $idx }}][form_type]"
-                                       value="{{ $t->pivot->form_type ?? '' }}"
-                                       class="w-full border rounded px-3 py-2"
-                                       placeholder="Form type (e.g. noun (masc.))">
-                                <input type="text"
-                                       name="new_entries[{{ $idx }}][transcription_ru]"
-                                       value="{{ $t->pivot->transcription_ru ?? '' }}"
-                                       class="w-full border rounded px-3 py-2"
-                                       placeholder="If different from default">
-                                <button type="button" class="entry-transcription-stress px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded hover:bg-gray-300 shrink-0" title="Cycle stress to next vowel (left to right)">Stress</button>
-                                <button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>
-                            </div>
+                            @include('admin.flashcards.words.partials.word-form-sense-row', [
+                                'idx' => $idx,
+                                'translationRu' => $t->text,
+                                'formType' => $t->pivot->form_type ?? '',
+                                'transcriptionRu' => $t->pivot->transcription_ru ?? '',
+                            ])
                         @endforeach
                     @else
-                        <div class="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center">
-                            <input type="text"
-                                   name="new_entries[0][translation_ru]"
-                                   class="w-full border rounded px-3 py-2"
-                                   placeholder="Translation (RU)">
-                            <input type="text"
-                                   name="new_entries[0][form_type]"
-                                   class="w-full border rounded px-3 py-2"
-                                   placeholder="Form type (e.g. noun (masc.))">
-                            <input type="text"
-                                   name="new_entries[0][transcription_ru]"
-                                   class="w-full border rounded px-3 py-2"
-                                   placeholder="If different from default">
-                            <button type="button" class="entry-transcription-stress px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded hover:bg-gray-300 shrink-0" title="Cycle stress to next vowel (left to right)">Stress</button>
-                            <button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>
-                        </div>
+                        @include('admin.flashcards.words.partials.word-form-sense-row', [
+                            'idx' => 0,
+                            'translationRu' => '',
+                            'formType' => '',
+                            'transcriptionRu' => '',
+                        ])
                     @endif
                 </div>
             </div>
@@ -160,13 +124,27 @@
 
         function createEntryRow(index, translation, formType, transcriptionOverride) {
             const row = document.createElement('div');
-            row.className = 'grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center';
+            row.className = 'entry-row relative border border-gray-200 rounded-lg p-4 space-y-3 bg-gray-50/90';
             row.innerHTML = '' +
-                '<input type="text" name="new_entries[' + index + '][translation_ru]" class="w-full border rounded px-3 py-2" placeholder="Translation (RU)">' +
-                '<input type="text" name="new_entries[' + index + '][form_type]" class="w-full border rounded px-3 py-2" placeholder="Form type (e.g. noun (masc.))">' +
-                '<input type="text" name="new_entries[' + index + '][transcription_ru]" class="w-full border rounded px-3 py-2" placeholder="If different from default">' +
-                '<button type="button" class="entry-transcription-stress px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded hover:bg-gray-300 shrink-0" title="Cycle stress to next vowel (left to right)">Stress</button>' +
-                '<button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>';
+                '<div class="flex items-center justify-between gap-2">' +
+                '<span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Sense</span>' +
+                '<button type="button" class="entry-delete min-h-[2.5rem] min-w-[2.5rem] inline-flex items-center justify-center text-lg leading-none text-red-600 hover:bg-red-50 rounded-lg active:bg-red-100" title="Remove sense">×</button>' +
+                '</div>' +
+                '<div class="space-y-1">' +
+                '<label class="block text-xs font-medium text-gray-600">Translation (RU)</label>' +
+                '<input type="text" name="new_entries[' + index + '][translation_ru]" class="w-full border rounded px-3 py-2" placeholder="Translation (RU)" autocomplete="off">' +
+                '</div>' +
+                '<div class="space-y-1">' +
+                '<label class="block text-xs font-medium text-gray-600">Form type</label>' +
+                '<input type="text" name="new_entries[' + index + '][form_type]" class="w-full border rounded px-3 py-2" placeholder="e.g. noun (masc.)" autocomplete="off">' +
+                '</div>' +
+                '<div class="space-y-1">' +
+                '<label class="block text-xs font-medium text-gray-600">Transcription if different</label>' +
+                '<div class="flex gap-2 items-stretch">' +
+                '<input type="text" name="new_entries[' + index + '][transcription_ru]" class="flex-1 min-w-0 border rounded px-3 py-2" placeholder="Leave empty to use default above" autocomplete="off">' +
+                '<button type="button" class="entry-transcription-stress shrink-0 px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded hover:bg-gray-300" title="Cycle stress to next vowel (left to right)">Stress</button>' +
+                '</div>' +
+                '</div>';
             row.querySelector('input[name*="[translation_ru]"]').value = translation || '';
             row.querySelector('input[name*="[form_type]"]').value = formType || '';
             row.querySelector('input[name*="[transcription_ru]"]').value = transcriptionOverride || '';

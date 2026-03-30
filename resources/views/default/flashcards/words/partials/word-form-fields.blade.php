@@ -51,7 +51,7 @@
 
 <div>
     <label class="block font-medium text-gray-700 mb-1">Translations (Russian)</label>
-    <p class="text-sm text-gray-500 mb-1">Each sense: translation + form type. Links existing or creates if missing.</p>
+    <p class="text-sm text-gray-500 mb-1">Each sense is a separate block below (translation, form type, optional transcription). Links existing or creates if missing.</p>
     @if ($word)
         @php
             $oldEntries = old('new_entries');
@@ -61,68 +61,32 @@
                 <span class="text-sm font-medium text-gray-700">Senses</span>
                 <button type="button" id="add-entry-row" class="text-sm text-indigo-600 hover:underline">+ Add sense</button>
             </div>
-            <div id="entries-container" class="space-y-2">
+            <div id="entries-container" class="space-y-3">
                 @if (is_array($oldEntries))
                     @foreach ($oldEntries as $idx => $entry)
-                        <div class="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center">
-                            <input type="text"
-                                   name="new_entries[{{ $idx }}][translation_ru]"
-                                   value="{{ $entry['translation_ru'] ?? '' }}"
-                                   class="{{ $inputClass }}"
-                                   placeholder="Translation (RU)">
-                            <input type="text"
-                                   name="new_entries[{{ $idx }}][form_type]"
-                                   value="{{ $entry['form_type'] ?? '' }}"
-                                   class="{{ $inputClass }}"
-                                   placeholder="Form type (e.g. noun (masc.))">
-                            <input type="text"
-                                   name="new_entries[{{ $idx }}][transcription_ru]"
-                                   value="{{ $entry['transcription_ru'] ?? '' }}"
-                                   class="{{ $inputClass }}"
-                                   placeholder="If different from default">
-                            <button type="button" class="entry-transcription-stress {{ $btnStressSmall }}" title="Cycle stress to next vowel (left to right)">Stress</button>
-                            <button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>
-                        </div>
+                        @include('default.flashcards.words.partials.word-form-sense-row', [
+                            'idx' => $idx,
+                            'translationRu' => $entry['translation_ru'] ?? '',
+                            'formType' => $entry['form_type'] ?? '',
+                            'transcriptionRu' => $entry['transcription_ru'] ?? '',
+                        ])
                     @endforeach
                 @elseif($word->translations && $word->translations->count())
                     @foreach ($word->translations as $idx => $t)
-                        <div class="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center">
-                            <input type="text"
-                                   name="new_entries[{{ $idx }}][translation_ru]"
-                                   value="{{ $t->text }}"
-                                   class="{{ $inputClass }}"
-                                   placeholder="Translation (RU)">
-                            <input type="text"
-                                   name="new_entries[{{ $idx }}][form_type]"
-                                   value="{{ $t->pivot->form_type ?? '' }}"
-                                   class="{{ $inputClass }}"
-                                   placeholder="Form type (e.g. noun (masc.))">
-                            <input type="text"
-                                   name="new_entries[{{ $idx }}][transcription_ru]"
-                                   value="{{ $t->pivot->transcription_ru ?? '' }}"
-                                   class="{{ $inputClass }}"
-                                   placeholder="If different from default">
-                            <button type="button" class="entry-transcription-stress {{ $btnStressSmall }}" title="Cycle stress to next vowel (left to right)">Stress</button>
-                            <button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>
-                        </div>
+                        @include('default.flashcards.words.partials.word-form-sense-row', [
+                            'idx' => $idx,
+                            'translationRu' => $t->text,
+                            'formType' => $t->pivot->form_type ?? '',
+                            'transcriptionRu' => $t->pivot->transcription_ru ?? '',
+                        ])
                     @endforeach
                 @else
-                    <div class="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center">
-                        <input type="text"
-                               name="new_entries[0][translation_ru]"
-                               class="{{ $inputClass }}"
-                               placeholder="Translation (RU)">
-                        <input type="text"
-                               name="new_entries[0][form_type]"
-                               class="{{ $inputClass }}"
-                               placeholder="Form type (e.g. noun (masc.))">
-                        <input type="text"
-                               name="new_entries[0][transcription_ru]"
-                               class="{{ $inputClass }}"
-                               placeholder="If different from default">
-                        <button type="button" class="entry-transcription-stress {{ $btnStressSmall }}" title="Cycle stress to next vowel (left to right)">Stress</button>
-                        <button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>
-                    </div>
+                    @include('default.flashcards.words.partials.word-form-sense-row', [
+                        'idx' => 0,
+                        'translationRu' => '',
+                        'formType' => '',
+                        'transcriptionRu' => '',
+                    ])
                 @endif
             </div>
         </div>
@@ -135,44 +99,21 @@
                 <span class="text-sm font-medium text-gray-700">Senses</span>
                 <button type="button" id="add-entry-row" class="text-sm text-indigo-600 hover:underline">+ Add sense</button>
             </div>
-            <div id="entries-container" class="space-y-2">
+            <div id="entries-container" class="space-y-3">
                 @forelse ($oldEntries as $idx => $entry)
-                    <div class="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center">
-                        <input type="text"
-                               name="new_entries[{{ $idx }}][translation_ru]"
-                               value="{{ $entry['translation_ru'] ?? '' }}"
-                               class="{{ $inputClass }}"
-                               placeholder="Translation (RU)">
-                        <input type="text"
-                               name="new_entries[{{ $idx }}][form_type]"
-                               value="{{ $entry['form_type'] ?? '' }}"
-                               class="{{ $inputClass }}"
-                               placeholder="Form type (e.g. noun (masc.))">
-                        <input type="text"
-                               name="new_entries[{{ $idx }}][transcription_ru]"
-                               value="{{ $entry['transcription_ru'] ?? '' }}"
-                               class="{{ $inputClass }}"
-                               placeholder="If different from default">
-                        <button type="button" class="entry-transcription-stress {{ $btnStressSmall }}" title="Cycle stress to next vowel (left to right)">Stress</button>
-                        <button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>
-                    </div>
+                    @include('default.flashcards.words.partials.word-form-sense-row', [
+                        'idx' => $idx,
+                        'translationRu' => $entry['translation_ru'] ?? '',
+                        'formType' => $entry['form_type'] ?? '',
+                        'transcriptionRu' => $entry['transcription_ru'] ?? '',
+                    ])
                 @empty
-                    <div class="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center">
-                        <input type="text"
-                               name="new_entries[0][translation_ru]"
-                               class="{{ $inputClass }}"
-                               placeholder="Translation (RU)">
-                        <input type="text"
-                               name="new_entries[0][form_type]"
-                               class="{{ $inputClass }}"
-                               placeholder="Form type (e.g. noun (masc.))">
-                        <input type="text"
-                               name="new_entries[0][transcription_ru]"
-                               class="{{ $inputClass }}"
-                               placeholder="If different from default">
-                        <button type="button" class="entry-transcription-stress {{ $btnStressSmall }}" title="Cycle stress to next vowel (left to right)">Stress</button>
-                        <button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>
-                    </div>
+                    @include('default.flashcards.words.partials.word-form-sense-row', [
+                        'idx' => 0,
+                        'translationRu' => '',
+                        'formType' => '',
+                        'transcriptionRu' => '',
+                    ])
                 @endforelse
             </div>
         </div>

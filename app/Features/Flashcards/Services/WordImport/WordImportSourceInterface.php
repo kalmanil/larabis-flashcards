@@ -27,6 +27,7 @@ interface WordImportSourceInterface
      *     [
      *       'translation_ru' => string,
      *       'form_type' => string|null,
+     *       'transcription_ru' => string|null (optional per-sense override),
      *     ],
      *     ...
      *   ],

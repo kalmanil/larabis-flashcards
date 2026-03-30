@@ -25,6 +25,9 @@ final class WordFormTheme
         $btnStress = $theme === 'default'
             ? 'px-3 py-2 text-sm bg-indigo-100 text-indigo-800 rounded-xl hover:bg-indigo-200 focus:ring-2 focus:ring-indigo-500'
             : 'px-3 py-2 text-sm bg-gray-200 text-gray-800 rounded hover:bg-gray-300';
+        $btnStressSmall = $theme === 'default'
+            ? 'px-2 py-1 text-xs bg-indigo-100 text-indigo-800 rounded-lg hover:bg-indigo-200 shrink-0'
+            : 'px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded hover:bg-gray-300 shrink-0';
         $wordFormSpacing = $theme === 'default' ? 'space-y-5' : 'space-y-4';
         $wordFormBtnSubmit = $theme === 'default'
             ? 'px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-medium hover:from-indigo-600 hover:to-purple-700 shadow-md transition-all duration-200'
@@ -42,6 +45,7 @@ final class WordFormTheme
             'inputClassLg',
             'btnPrimary',
             'btnStress',
+            'btnStressSmall',
             'wordFormSpacing',
             'wordFormBtnSubmit',
             'wordFormBtnSecondary',

@@ -35,6 +35,7 @@ class GeminiWordImportSource implements WordImportSourceInterface
             . "'entries' (array of objects): each object is one sense with exactly one most fitting Russian translation: "
             . "'translation_ru' (string): the single best Russian translation for this sense. "
             . "'form_type' (string): part of speech or grammatical form in English (e.g., adverb, noun (masc.), verb – hif'il infinitive). "
+            . "'transcription_ru' (string, optional): only if this sense's pronunciation differs from the top-level 'transcription_ru'; same U+0301 stress rules. Omit if same as default. "
             . "Return only one translation per sense. Return ONLY valid JSON, with no extra commentary or code fences.";
 
         $payload = [
@@ -81,10 +82,14 @@ class GeminiWordImportSource implements WordImportSourceInterface
                 if (trim($translation) === '') {
                     continue;
                 }
-                $entries[] = [
+                $entryOut = [
                     'translation_ru' => $translation,
                     'form_type' => isset($entry['form_type']) ? (string) $entry['form_type'] : null,
                 ];
+                if (isset($entry['transcription_ru']) && trim((string) $entry['transcription_ru']) !== '') {
+                    $entryOut['transcription_ru'] = TranscriptionRuNormalizer::normalize((string) $entry['transcription_ru']);
+                }
+                $entries[] = $entryOut;
             }
         }
 

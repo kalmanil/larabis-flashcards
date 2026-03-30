@@ -31,6 +31,7 @@
 
 <div>
     <label class="block font-medium text-gray-700 mb-1">Transcription (Russian)</label>
+    <p class="text-xs text-gray-500 mb-1">Default pronunciation for this form. Use per-sense overrides below only when a sense reads differently.</p>
     <div class="flex gap-2">
         <input type="text" name="transcription_ru" id="transcription_ru" value="{{ old('transcription_ru', $word?->transcription_ru) }}" class="flex-1 {{ $inputClass }}">
         <button type="button" id="transcription_ru_cycle_stress" class="{{ $btnStress }}" title="Cycle stress to next vowel (left to right)">Stress</button>
@@ -43,7 +44,7 @@
         <input type="number" name="frequency_rank" id="frequency_rank" value="{{ old('frequency_rank', $word?->frequency_rank) }}" min="1" class="{{ $inputClass }}">
     </div>
     <div>
-        <label class="block font-medium text-gray-700 mb-1">Frequency per million</label>
+        <label class="block font-medium text-gray-700 mb-1">Per million</label>
         <input type="number" name="frequency_per_million" id="frequency_per_million" value="{{ old('frequency_per_million', $word?->frequency_per_million) }}" step="0.01" min="0" class="{{ $inputClass }}">
     </div>
 </div>
@@ -63,7 +64,7 @@
             <div id="entries-container" class="space-y-2">
                 @if (is_array($oldEntries))
                     @foreach ($oldEntries as $idx => $entry)
-                        <div class="grid grid-cols-[1fr_1fr_auto] gap-2 entry-row items-center">
+                        <div class="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center">
                             <input type="text"
                                    name="new_entries[{{ $idx }}][translation_ru]"
                                    value="{{ $entry['translation_ru'] ?? '' }}"
@@ -74,12 +75,18 @@
                                    value="{{ $entry['form_type'] ?? '' }}"
                                    class="{{ $inputClass }}"
                                    placeholder="Form type (e.g. noun (masc.))">
+                            <input type="text"
+                                   name="new_entries[{{ $idx }}][transcription_ru]"
+                                   value="{{ $entry['transcription_ru'] ?? '' }}"
+                                   class="{{ $inputClass }}"
+                                   placeholder="If different from default">
+                            <button type="button" class="entry-transcription-stress {{ $btnStressSmall }}" title="Cycle stress to next vowel (left to right)">Stress</button>
                             <button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>
                         </div>
                     @endforeach
                 @elseif($word->translations && $word->translations->count())
                     @foreach ($word->translations as $idx => $t)
-                        <div class="grid grid-cols-[1fr_1fr_auto] gap-2 entry-row items-center">
+                        <div class="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center">
                             <input type="text"
                                    name="new_entries[{{ $idx }}][translation_ru]"
                                    value="{{ $t->text }}"
@@ -90,11 +97,17 @@
                                    value="{{ $t->pivot->form_type ?? '' }}"
                                    class="{{ $inputClass }}"
                                    placeholder="Form type (e.g. noun (masc.))">
+                            <input type="text"
+                                   name="new_entries[{{ $idx }}][transcription_ru]"
+                                   value="{{ $t->pivot->transcription_ru ?? '' }}"
+                                   class="{{ $inputClass }}"
+                                   placeholder="If different from default">
+                            <button type="button" class="entry-transcription-stress {{ $btnStressSmall }}" title="Cycle stress to next vowel (left to right)">Stress</button>
                             <button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>
                         </div>
                     @endforeach
                 @else
-                    <div class="grid grid-cols-[1fr_1fr_auto] gap-2 entry-row items-center">
+                    <div class="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center">
                         <input type="text"
                                name="new_entries[0][translation_ru]"
                                class="{{ $inputClass }}"
@@ -103,6 +116,11 @@
                                name="new_entries[0][form_type]"
                                class="{{ $inputClass }}"
                                placeholder="Form type (e.g. noun (masc.))">
+                        <input type="text"
+                               name="new_entries[0][transcription_ru]"
+                               class="{{ $inputClass }}"
+                               placeholder="If different from default">
+                        <button type="button" class="entry-transcription-stress {{ $btnStressSmall }}" title="Cycle stress to next vowel (left to right)">Stress</button>
                         <button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>
                     </div>
                 @endif
@@ -119,7 +137,7 @@
             </div>
             <div id="entries-container" class="space-y-2">
                 @forelse ($oldEntries as $idx => $entry)
-                    <div class="grid grid-cols-[1fr_1fr_auto] gap-2 entry-row items-center">
+                    <div class="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center">
                         <input type="text"
                                name="new_entries[{{ $idx }}][translation_ru]"
                                value="{{ $entry['translation_ru'] ?? '' }}"
@@ -130,10 +148,16 @@
                                value="{{ $entry['form_type'] ?? '' }}"
                                class="{{ $inputClass }}"
                                placeholder="Form type (e.g. noun (masc.))">
+                        <input type="text"
+                               name="new_entries[{{ $idx }}][transcription_ru]"
+                               value="{{ $entry['transcription_ru'] ?? '' }}"
+                               class="{{ $inputClass }}"
+                               placeholder="If different from default">
+                        <button type="button" class="entry-transcription-stress {{ $btnStressSmall }}" title="Cycle stress to next vowel (left to right)">Stress</button>
                         <button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>
                     </div>
                 @empty
-                    <div class="grid grid-cols-[1fr_1fr_auto] gap-2 entry-row items-center">
+                    <div class="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center">
                         <input type="text"
                                name="new_entries[0][translation_ru]"
                                class="{{ $inputClass }}"
@@ -142,6 +166,11 @@
                                name="new_entries[0][form_type]"
                                class="{{ $inputClass }}"
                                placeholder="Form type (e.g. noun (masc.))">
+                        <input type="text"
+                               name="new_entries[0][transcription_ru]"
+                               class="{{ $inputClass }}"
+                               placeholder="If different from default">
+                        <button type="button" class="entry-transcription-stress {{ $btnStressSmall }}" title="Cycle stress to next vowel (left to right)">Stress</button>
                         <button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>
                     </div>
                 @endforelse

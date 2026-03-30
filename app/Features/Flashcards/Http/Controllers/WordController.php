@@ -62,9 +62,17 @@ class WordController
                     ? trim((string) $entry['form_type'])
                     : null;
 
+                $pivotTranscription = null;
+                $overrideRaw = trim((string) ($entry['transcription_ru'] ?? ''));
+                if ($overrideRaw !== '') {
+                    $normalized = TranscriptionRuNormalizer::normalize($overrideRaw);
+                    $pivotTranscription = ($normalized === '' || $normalized === null) ? null : $normalized;
+                }
+
                 $syncData[$t->id] = [
                     'form_type' => $formType,
                     'sense_order' => $index + 1,
+                    'transcription_ru' => $pivotTranscription,
                 ];
             }
         }
@@ -181,7 +189,13 @@ class WordController
 
         $word = HebrewForm::pendingEnrichment()
             ->orderBy('id')
-            ->with(['shoresh', 'translations'])
+            ->with([
+                'shoresh',
+                'translations' => function ($q) {
+                    $q->orderByPivot('sense_order');
+                },
+                'translations.language',
+            ])
             ->firstOrFail();
 
         $pendingPosition = HebrewForm::pendingEnrichment()
@@ -227,6 +241,14 @@ class WordController
 
     public function edit(HebrewForm $hebrewForm)
     {
+        $hebrewForm->load([
+            'shoresh',
+            'translations' => function ($q) {
+                $q->orderByPivot('sense_order');
+            },
+            'translations.language',
+        ]);
+
         return TenancyHelper::view('flashcards.words.edit', [
             'word' => $hebrewForm,
         ]);

@@ -50,11 +50,13 @@ tenants/flashcards/
 This tenant does not run standalone. Install and use it from the **Larabis root**:
 
 1. Ensure the tenant is registered in Larabis (tenant ID: `flashcards`).
-2. Run tenant migrations from Larabis root:
+2. Run tenant migrations from **Larabis root** (includes shared `database/migrations/tenant` and this repo’s `database/migrations/`):
 
    ```bash
-   php artisan tenants:migrate --tenants=flashcards --path=tenants/flashcards/database/migrations
+   php artisan tenants:migrate --tenants=flashcards
    ```
+
+   Feature migrations live only under `tenants/flashcards/database/migrations/`; Larabis wires `tenants:migrate` to run that folder per tenant automatically (see Larabis README). To run **only** this folder: `--path=tenants/flashcards/database/migrations`.
 
 3. Configure Socialite in Larabis for Facebook/Google if using social login.
 

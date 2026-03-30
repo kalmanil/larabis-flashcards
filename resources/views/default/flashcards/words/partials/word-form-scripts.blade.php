@@ -1,4 +1,4 @@
-{{-- Requires WordFormTheme::variables() extract() earlier in the same view (sets $wordFormInputBorderJs). --}}
+{{-- Requires WordFormTheme::variables() extract() earlier in the same view (sets $wordFormInputBorderJs, $btnStressSmall). --}}
 <script>
     (function () {
         const container = document.getElementById('entries-container');
@@ -6,16 +6,20 @@
         const importBtn = document.getElementById('gemini-import-btn');
         const statusEl = document.getElementById('gemini-import-status');
         const inputBorder = @json($wordFormInputBorderJs);
+        const btnStressSmall = @json($btnStressSmall);
 
-        function createEntryRow(index, translation, formType) {
+        function createEntryRow(index, translation, formType, transcriptionOverride) {
             const row = document.createElement('div');
-            row.className = 'grid grid-cols-[1fr_1fr_auto] gap-2 entry-row items-center';
+            row.className = 'grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center';
             row.innerHTML = '' +
                 '<input type="text" name="new_entries[' + index + '][translation_ru]" class="w-full ' + inputBorder + '" placeholder="Translation (RU)">' +
                 '<input type="text" name="new_entries[' + index + '][form_type]" class="w-full ' + inputBorder + '" placeholder="Form type (e.g. noun (masc.))">' +
+                '<input type="text" name="new_entries[' + index + '][transcription_ru]" class="w-full ' + inputBorder + '" placeholder="If different from default">' +
+                '<button type="button" class="entry-transcription-stress ' + btnStressSmall + '" title="Cycle stress to next vowel (left to right)">Stress</button>' +
                 '<button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>';
             row.querySelector('input[name*="[translation_ru]"]').value = translation || '';
             row.querySelector('input[name*="[form_type]"]').value = formType || '';
+            row.querySelector('input[name*="[transcription_ru]"]').value = transcriptionOverride || '';
             return row;
         }
         function reindexEntries() {
@@ -24,6 +28,7 @@
             rows.forEach(function (row, i) {
                 row.querySelector('input[name*="[translation_ru]"]').name = 'new_entries[' + i + '][translation_ru]';
                 row.querySelector('input[name*="[form_type]"]').name = 'new_entries[' + i + '][form_type]';
+                row.querySelector('input[name*="[transcription_ru]"]').name = 'new_entries[' + i + '][transcription_ru]';
             });
             index = rows.length;
         }
@@ -32,7 +37,7 @@
             if (btn) btn.addEventListener('click', function () {
                 row.remove();
                 if (container.querySelectorAll('.entry-row').length === 0) {
-                    const r = createEntryRow(0, '', '');
+                    const r = createEntryRow(0, '', '', '');
                     container.appendChild(r);
                     setupDelete(r);
                 }
@@ -44,7 +49,7 @@
 
         if (container && addBtn) {
             addBtn.addEventListener('click', function () {
-                const row = createEntryRow(index, '', '');
+                const row = createEntryRow(index, '', '', '');
                 container.appendChild(row);
                 setupDelete(row);
                 index++;
@@ -105,7 +110,8 @@
                             const row = createEntryRow(
                                 index,
                                 entry.translation_ru || '',
-                                entry.form_type || ''
+                                entry.form_type || '',
+                                entry.transcription_ru || ''
                             );
                             container.appendChild(row);
                             setupDelete(row);
@@ -113,7 +119,7 @@
                         });
 
                         if (index === 0) {
-                            const row = createEntryRow(0, '', '');
+                            const row = createEntryRow(0, '', '', '');
                             container.appendChild(row);
                             setupDelete(row);
                             index = 1;
@@ -132,10 +138,9 @@
     (function () {
         const ACUTE = '\u0301';
         const VOWELS = /[аеёиоуыэюя]/gi;
-        const input = document.getElementById('transcription_ru');
-        const btn = document.getElementById('transcription_ru_cycle_stress');
-        if (!input || !btn) return;
-        btn.addEventListener('click', function () {
+
+        function cycleRussianStress(input) {
+            if (!input) return;
             let s = input.value || '';
             const noStress = s.replace(/\u0301/g, '');
             const vowelIndices = [];
@@ -154,6 +159,26 @@
             const insertAt = vowelIndices[nextIdx] + 1;
             const withStress = noStress.slice(0, insertAt) + ACUTE + noStress.slice(insertAt);
             input.value = withStress;
-        });
+        }
+
+        const mainInput = document.getElementById('transcription_ru');
+        const mainBtn = document.getElementById('transcription_ru_cycle_stress');
+        if (mainInput && mainBtn) {
+            mainBtn.addEventListener('click', function () {
+                cycleRussianStress(mainInput);
+            });
+        }
+
+        const container = document.getElementById('entries-container');
+        if (container) {
+            container.addEventListener('click', function (e) {
+                const t = e.target.closest('.entry-transcription-stress');
+                if (!t || !container.contains(t)) return;
+                const row = t.closest('.entry-row');
+                if (!row) return;
+                const inp = row.querySelector('input[name*="[transcription_ru]"]');
+                cycleRussianStress(inp);
+            });
+        }
     })();
 </script>

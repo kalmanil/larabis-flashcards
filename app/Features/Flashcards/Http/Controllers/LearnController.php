@@ -82,8 +82,12 @@ class LearnController
             return TenancyHelper::view('flashcards.learn.complete');
         }
 
-        $hebrewForm = HebrewForm::with('translations.language')
-            ->find($cardIds[$position]);
+        $hebrewForm = HebrewForm::with([
+            'translations' => function ($q) {
+                $q->orderByPivot('sense_order');
+            },
+            'translations.language',
+        ])->find($cardIds[$position]);
 
         if (!$hebrewForm) {
             $learn['position'] = $position + 1;
@@ -96,7 +100,12 @@ class LearnController
         $translations = $sessionTranslations->isNotEmpty()
             ? $sessionTranslations->pluck('text')->implode(', ')
             : $hebrewForm->translations->pluck('text')->implode(', ');
-        $transcription = $hebrewForm->transcription_ru ?? '—';
+
+        $defaultTranscription = $hebrewForm->transcription_ru;
+        $forTranscription = $sessionTranslations->isNotEmpty()
+            ? $sessionTranslations
+            : $hebrewForm->translations;
+        $transcription = $this->effectiveTranscriptionRuDisplay($forTranscription, $defaultTranscription);
 
         $frontType = $learn['front_type'];
         if ($frontType === 'random') {
@@ -175,5 +184,27 @@ class LearnController
         UserCardProgress::where('user_id', Auth::id())->update(['known' => false]);
 
         return redirect()->route('flashcards.dashboard')->with('success', 'Progress reset.');
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, \App\Features\Flashcards\Models\Translation>  $translations
+     */
+    protected function effectiveTranscriptionRuDisplay($translations, ?string $defaultTranscription): string
+    {
+        $default = $defaultTranscription ?? '';
+        if ($translations->isEmpty()) {
+            return $default !== '' ? $default : '—';
+        }
+
+        $lines = $translations->map(function ($t) use ($default) {
+            $override = $t->pivot->transcription_ru ?? null;
+            $eff = ($override !== null && $override !== '') ? $override : $default;
+
+            return $eff !== '' ? $eff : '—';
+        })->values()->all();
+
+        $unique = array_unique($lines);
+
+        return count($unique) === 1 ? ($lines[0] ?? '—') : implode(' · ', $lines);
     }
 }

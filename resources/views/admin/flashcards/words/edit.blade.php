@@ -38,6 +38,7 @@
 
         <div>
             <label class="block font-medium text-gray-700 mb-1">Transcription (Russian)</label>
+            <p class="text-xs text-gray-500 mb-1">Default pronunciation for this form. Use per-sense overrides below only when a sense reads differently.</p>
             <div class="flex gap-2">
                 <input type="text" name="transcription_ru" id="transcription_ru" value="{{ old('transcription_ru', $word->transcription_ru) }}" class="flex-1 border rounded px-3 py-2">
                 <button type="button" id="transcription_ru_cycle_stress" class="px-3 py-2 text-sm bg-gray-200 text-gray-800 rounded hover:bg-gray-300" title="Cycle stress to next vowel (left to right)">Stress</button>
@@ -69,7 +70,7 @@
                 <div id="entries-container" class="space-y-2">
                     @if (is_array($oldEntries))
                         @foreach ($oldEntries as $idx => $entry)
-                            <div class="grid grid-cols-[1fr_1fr_auto] gap-2 entry-row items-center">
+                            <div class="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center">
                                 <input type="text"
                                        name="new_entries[{{ $idx }}][translation_ru]"
                                        value="{{ $entry['translation_ru'] ?? '' }}"
@@ -80,12 +81,18 @@
                                        value="{{ $entry['form_type'] ?? '' }}"
                                        class="w-full border rounded px-3 py-2"
                                        placeholder="Form type (e.g. noun (masc.))">
+                                <input type="text"
+                                       name="new_entries[{{ $idx }}][transcription_ru]"
+                                       value="{{ $entry['transcription_ru'] ?? '' }}"
+                                       class="w-full border rounded px-3 py-2"
+                                       placeholder="If different from default">
+                                <button type="button" class="entry-transcription-stress px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded hover:bg-gray-300 shrink-0" title="Cycle stress to next vowel (left to right)">Stress</button>
                                 <button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>
                             </div>
                         @endforeach
                     @elseif($word->translations && $word->translations->count())
                         @foreach ($word->translations as $idx => $t)
-                            <div class="grid grid-cols-[1fr_1fr_auto] gap-2 entry-row items-center">
+                            <div class="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center">
                                 <input type="text"
                                        name="new_entries[{{ $idx }}][translation_ru]"
                                        value="{{ $t->text }}"
@@ -96,11 +103,17 @@
                                        value="{{ $t->pivot->form_type ?? '' }}"
                                        class="w-full border rounded px-3 py-2"
                                        placeholder="Form type (e.g. noun (masc.))">
+                                <input type="text"
+                                       name="new_entries[{{ $idx }}][transcription_ru]"
+                                       value="{{ $t->pivot->transcription_ru ?? '' }}"
+                                       class="w-full border rounded px-3 py-2"
+                                       placeholder="If different from default">
+                                <button type="button" class="entry-transcription-stress px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded hover:bg-gray-300 shrink-0" title="Cycle stress to next vowel (left to right)">Stress</button>
                                 <button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>
                             </div>
                         @endforeach
                     @else
-                        <div class="grid grid-cols-[1fr_1fr_auto] gap-2 entry-row items-center">
+                        <div class="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center">
                             <input type="text"
                                    name="new_entries[0][translation_ru]"
                                    class="w-full border rounded px-3 py-2"
@@ -109,6 +122,11 @@
                                    name="new_entries[0][form_type]"
                                    class="w-full border rounded px-3 py-2"
                                    placeholder="Form type (e.g. noun (masc.))">
+                            <input type="text"
+                                   name="new_entries[0][transcription_ru]"
+                                   class="w-full border rounded px-3 py-2"
+                                   placeholder="If different from default">
+                            <button type="button" class="entry-transcription-stress px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded hover:bg-gray-300 shrink-0" title="Cycle stress to next vowel (left to right)">Stress</button>
                             <button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>
                         </div>
                     @endif
@@ -130,15 +148,18 @@
         const statusEl = document.getElementById('gemini-import-status');
         if (!container || !addBtn) return;
 
-        function createEntryRow(index, translation, formType) {
+        function createEntryRow(index, translation, formType, transcriptionOverride) {
             const row = document.createElement('div');
-            row.className = 'grid grid-cols-[1fr_1fr_auto] gap-2 entry-row items-center';
+            row.className = 'grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 entry-row items-center';
             row.innerHTML = '' +
                 '<input type="text" name="new_entries[' + index + '][translation_ru]" class="w-full border rounded px-3 py-2" placeholder="Translation (RU)">' +
                 '<input type="text" name="new_entries[' + index + '][form_type]" class="w-full border rounded px-3 py-2" placeholder="Form type (e.g. noun (masc.))">' +
+                '<input type="text" name="new_entries[' + index + '][transcription_ru]" class="w-full border rounded px-3 py-2" placeholder="If different from default">' +
+                '<button type="button" class="entry-transcription-stress px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded hover:bg-gray-300 shrink-0" title="Cycle stress to next vowel (left to right)">Stress</button>' +
                 '<button type="button" class="entry-delete px-2 py-1 text-red-600 hover:bg-red-50 rounded" title="Remove sense">×</button>';
             row.querySelector('input[name*="[translation_ru]"]').value = translation || '';
             row.querySelector('input[name*="[form_type]"]').value = formType || '';
+            row.querySelector('input[name*="[transcription_ru]"]').value = transcriptionOverride || '';
             return row;
         }
         function reindexEntries() {
@@ -146,6 +167,7 @@
             rows.forEach(function (row, i) {
                 row.querySelector('input[name*="[translation_ru]"]').name = 'new_entries[' + i + '][translation_ru]';
                 row.querySelector('input[name*="[form_type]"]').name = 'new_entries[' + i + '][form_type]';
+                row.querySelector('input[name*="[transcription_ru]"]').name = 'new_entries[' + i + '][transcription_ru]';
             });
             index = rows.length;
         }
@@ -154,7 +176,7 @@
             if (btn) btn.addEventListener('click', function () {
                 row.remove();
                 if (container.querySelectorAll('.entry-row').length === 0) {
-                    const r = createEntryRow(0, '', '');
+                    const r = createEntryRow(0, '', '', '');
                     container.appendChild(r);
                     setupDelete(r);
                 }
@@ -165,7 +187,7 @@
         container.querySelectorAll('.entry-row').forEach(setupDelete);
 
         addBtn.addEventListener('click', function () {
-            const row = createEntryRow(index, '', '');
+            const row = createEntryRow(index, '', '', '');
             container.appendChild(row);
             setupDelete(row);
             index++;
@@ -200,13 +222,13 @@
                         container.innerHTML = '';
                         index = 0;
                         entries.forEach(function (entry) {
-                            const row = createEntryRow(index, entry.translation_ru || '', entry.form_type || '');
+                            const row = createEntryRow(index, entry.translation_ru || '', entry.form_type || '', entry.transcription_ru || '');
                             container.appendChild(row);
                             setupDelete(row);
                             index++;
                         });
                         if (index === 0) {
-                            const row = createEntryRow(0, '', '');
+                            const row = createEntryRow(0, '', '', '');
                             container.appendChild(row);
                             setupDelete(row);
                             index = 1;
@@ -224,10 +246,8 @@
     (function () {
         const ACUTE = '\u0301';
         const VOWELS = /[аеёиоуыэюя]/gi;
-        const input = document.getElementById('transcription_ru');
-        const btn = document.getElementById('transcription_ru_cycle_stress');
-        if (!input || !btn) return;
-        btn.addEventListener('click', function () {
+        function cycleRussianStress(input) {
+            if (!input) return;
             let s = input.value || '';
             const noStress = s.replace(/\u0301/g, '');
             const vowelIndices = [];
@@ -246,7 +266,25 @@
             const insertAt = vowelIndices[nextIdx] + 1;
             const withStress = noStress.slice(0, insertAt) + ACUTE + noStress.slice(insertAt);
             input.value = withStress;
-        });
+        }
+        const mainInput = document.getElementById('transcription_ru');
+        const mainBtn = document.getElementById('transcription_ru_cycle_stress');
+        if (mainInput && mainBtn) {
+            mainBtn.addEventListener('click', function () {
+                cycleRussianStress(mainInput);
+            });
+        }
+        const entContainer = document.getElementById('entries-container');
+        if (entContainer) {
+            entContainer.addEventListener('click', function (e) {
+                const t = e.target.closest('.entry-transcription-stress');
+                if (!t || !entContainer.contains(t)) return;
+                const row = t.closest('.entry-row');
+                if (!row) return;
+                const inp = row.querySelector('input[name*="[transcription_ru]"]');
+                cycleRussianStress(inp);
+            });
+        }
     })();
 </script>
 @endsection

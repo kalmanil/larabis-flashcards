@@ -98,6 +98,8 @@
             </div>
         </div>
 
+        @include('default.flashcards.words.partials.word-form-add-to-deck')
+
         <div class="flex gap-4">
             <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Update</button>
             <a href="{{ route('flashcards.words.index') }}" class="px-4 py-2 border rounded hover:bg-gray-50">Cancel</a>

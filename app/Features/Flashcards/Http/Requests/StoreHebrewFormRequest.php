@@ -23,6 +23,7 @@ class StoreHebrewFormRequest extends FormRequest
             'new_entries.*.translation_ru' => 'nullable|string|max:255',
             'new_entries.*.form_type' => 'nullable|string|max:100',
             'new_entries.*.transcription_ru' => 'nullable|string|max:255',
+            'add_to_deck' => 'nullable|in:0,1',
         ];
     }
 }

@@ -2,7 +2,7 @@
 @php
     $word = $word ?? null;
     $formTextReadonly = $formTextReadonly ?? false;
-    $geminiImportLabel = $geminiImportLabel ?? ($word ? 'Request from Gemini' : 'Import from Gemini');
+    $geminiImportLabel = $geminiImportLabel ?? ($word ? 'Gemini' : 'Gemini');
     $formTextClass = trim('flex-1 ' . $inputClassLg . ($formTextReadonly ? ' bg-gray-50' : ''));
 @endphp
 
@@ -16,22 +16,21 @@
                class="{{ $formTextClass }}">
         <button type="button"
                 id="gemini-import-btn"
-                class="{{ $btnPrimary }}">
+                class="{{ $btnPrimary }} disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none">
             {{ $geminiImportLabel }}
         </button>
     </div>
-    <p class="text-xs text-gray-500 mt-1" id="gemini-import-status"></p>
 </div>
 
 <div>
-    <label class="block font-medium text-gray-700 mb-1">Root (shoresh)</label>
+    <label class="block font-medium text-gray-700 mb-1">Root</label>
     <input type="text" name="shoresh_root" id="shoresh_root" value="{{ old('shoresh_root', $word?->shoresh?->root ?? '') }}" placeholder="e.g. שלמ" dir="rtl" class="{{ $inputClass }}">
-    <p class="text-xs text-gray-500 mt-1">Links existing root or creates if missing.</p>
+    <p class="text-xs text-gray-500 mt-1"></p>
 </div>
 
 <div>
-    <label class="block font-medium text-gray-700 mb-1">Transcription (Russian)</label>
-    <p class="text-xs text-gray-500 mb-1">Default pronunciation for this form. Use per-sense overrides below only when a sense reads differently.</p>
+    <label class="block font-medium text-gray-700 mb-1">Default Transcription</label>
+    <p class="text-xs text-gray-500 mb-1"></p>
     <div class="flex gap-2">
         <input type="text" name="transcription_ru" id="transcription_ru" value="{{ old('transcription_ru', $word?->transcription_ru) }}" class="flex-1 {{ $inputClass }}">
         <button type="button" id="transcription_ru_cycle_stress" class="{{ $btnStress }}" title="Cycle stress to next vowel (left to right)">Stress</button>
@@ -51,7 +50,7 @@
 
 <div>
     <label class="block font-medium text-gray-700 mb-1">Translations (Russian)</label>
-    <p class="text-sm text-gray-500 mb-1">Each sense is a separate block below (translation, form type, optional transcription). Links existing or creates if missing.</p>
+    <p class="text-sm text-gray-500 mb-1"></p>
     @if ($word)
         @php
             $oldEntries = old('new_entries');

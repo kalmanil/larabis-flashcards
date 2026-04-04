@@ -52,32 +52,45 @@
                         <div class="shrink-0">
                             <span class="text-xl font-semibold" dir="rtl">{{ $word->form_text }}</span>
                             @if ($word->shoresh)
-                                <span class="text-gray-500 text-sm ml-2">({{ $word->shoresh->root }})</span>
+                                <span class="text-gray-500 text-sm ml-2">{{ $word->shoresh->root }}</span>
                             @else
-                                <span class="text-gray-500 text-sm ml-2">(—)</span>
+                                <span class="text-gray-500 text-sm ml-2"></span>
                             @endif
                         </div>
-                        <p class="shrink-0 text-sm text-gray-600">{{ $word->transcription_ru ?? '—' }}</p>
+                        <p class="shrink-0 text-sm text-gray-600">{{ $word->transcription_ru ?? '' }}</p>
                         <div class="text-sm text-gray-600 min-w-0 flex-1">
                             @foreach ($word->translations as $t)
                                 <span class="inline-block bg-indigo-50 text-indigo-800 px-2 py-0.5 rounded text-xs mr-1 mb-1">{{ $t->text }}</span>
                             @endforeach
                             @if ($word->translations->isEmpty())
-                                <span class="text-gray-400">—</span>
+                                <span class="text-gray-400"></span>
                             @endif
                         </div>
                         <p class="shrink-0 text-sm text-gray-500 whitespace-nowrap tabular-nums">
                             @if ($word->frequency_rank) #{{ $word->frequency_rank }} @endif
                             @if ($word->frequency_per_million) {{ number_format($word->frequency_per_million, 1) }}/M @endif
-                            @if (!$word->frequency_rank && !$word->frequency_per_million) — @endif
+                            @if (!$word->frequency_rank && !$word->frequency_per_million)  @endif
                         </p>
                     </div>
+                    @php
+                        $hasTranslations = $word->translations->isNotEmpty();
+                        $inDeck = $defaultDeck && !empty($inDeckHebrewFormIds[$word->id] ?? null);
+                    @endphp
                     <div class="flex flex-wrap gap-x-4 gap-y-2 shrink-0 sm:flex-col sm:items-end sm:gap-2 lg:flex-row lg:items-center lg:justify-end lg:gap-3 border-t border-gray-100 pt-4 sm:border-t-0 sm:pt-0">
                         <a href="{{ route('flashcards.words.edit', $word) }}" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm">Edit</a>
-                        <form action="{{ route('flashcards.words.add-to-deck', $word) }}" method="POST" class="inline">
-                            @csrf
-                            <button type="submit" class="text-green-600 hover:text-green-800 font-medium text-sm">Add to deck</button>
-                        </form>
+                        @if ($hasTranslations && !$inDeck)
+                            <form action="{{ route('flashcards.words.add-to-deck', $word) }}" method="POST" class="inline">
+                                @csrf
+                                <button type="submit" class="text-green-600 hover:text-green-800 font-medium text-sm">Add to deck</button>
+                            </form>
+                        @elseif ($hasTranslations && $inDeck && $defaultDeck)
+                            <form action="{{ route('flashcards.decks.remove-card', [$defaultDeck, $word]) }}" method="POST" class="inline"
+                                  onsubmit="return confirm('Remove from deck?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-amber-700 hover:text-amber-900 font-medium text-sm">Remove from deck</button>
+                            </form>
+                        @endif
                         <form action="{{ route('flashcards.words.destroy', $word) }}" method="POST" class="inline" onsubmit="return confirm('Delete this word?');">
                             @csrf
                             @method('DELETE')

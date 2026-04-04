@@ -34,6 +34,8 @@
                         'formTextReadonly' => false,
                     ])
 
+                    @include('default.flashcards.words.partials.word-form-add-to-deck')
+
                     <div class="flex gap-4 pt-2">
                         <button type="submit" class="{{ $wordFormBtnSubmit }}">Update</button>
                         <a href="{{ route('flashcards.words.index') }}" class="{{ $wordFormBtnSecondary }}">Cancel</a>

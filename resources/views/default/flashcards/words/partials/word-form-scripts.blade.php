@@ -4,7 +4,6 @@
         const container = document.getElementById('entries-container');
         const addBtn = document.getElementById('add-entry-row');
         const importBtn = document.getElementById('gemini-import-btn');
-        const statusEl = document.getElementById('gemini-import-status');
         const inputBorder = @json($wordFormInputBorderJs);
         const btnStressSmall = @json($btnStressSmall);
 
@@ -80,7 +79,7 @@
                 const word = wordInput.value.trim();
                 const url = '{{ route('flashcards.words.import') }}' + '?source=gemini&word=' + encodeURIComponent(word);
 
-                if (statusEl) statusEl.textContent = 'Contacting Gemini...';
+                importBtn.disabled = true;
 
                 fetch(url, {
                     headers: {
@@ -138,12 +137,12 @@
                             setupDelete(row);
                             index = 1;
                         }
-
-                        if (statusEl) statusEl.textContent = 'Gemini data loaded.';
                     })
                     .catch(function (err) {
                         console.error(err);
-                        if (statusEl) statusEl.textContent = 'Gemini error: ' + err.message;
+                    })
+                    .finally(function () {
+                        importBtn.disabled = false;
                     });
             });
         }

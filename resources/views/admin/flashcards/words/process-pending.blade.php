@@ -107,6 +107,8 @@
             </div>
         </div>
 
+        @include('default.flashcards.words.partials.word-form-add-to-deck')
+
         <div class="flex flex-wrap gap-3">
             <button type="submit" name="enrichment_flow" value="1" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save and continue</button>
             <button type="submit" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Save and exit</button>

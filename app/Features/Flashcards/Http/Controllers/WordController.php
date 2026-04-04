@@ -121,9 +121,22 @@ class WordController
         $words = $query->orderBy('form_text')->paginate(20);
         $shoreshim = Shoresh::orderBy('root')->get();
 
+        $defaultDeck = Auth::user()->decks()->where('is_default', true)->first();
+        $wordIdsOnPage = $words->pluck('id')->all();
+        $inDeckHebrewFormIds = [];
+        if ($defaultDeck !== null && $wordIdsOnPage !== []) {
+            $ids = $defaultDeck->deckCards()
+                ->whereIn('hebrew_form_id', $wordIdsOnPage)
+                ->pluck('hebrew_form_id')
+                ->all();
+            $inDeckHebrewFormIds = array_fill_keys($ids, true);
+        }
+
         return TenancyHelper::view('flashcards.words.index', [
             'words' => $words,
             'shoreshim' => $shoreshim,
+            'defaultDeck' => $defaultDeck,
+            'inDeckHebrewFormIds' => $inDeckHebrewFormIds,
         ]);
     }
 
@@ -274,6 +287,13 @@ class WordController
         $newEntries = $request->input('new_entries', []);
 
         $this->syncTranslations($hebrewForm, [], [], $newEntries);
+
+        $deck = $this->ensureDefaultDeck();
+        if ($request->boolean('add_to_deck')) {
+            $deck->deckCards()->firstOrCreate(['hebrew_form_id' => $hebrewForm->id]);
+        } else {
+            $deck->deckCards()->where('hebrew_form_id', $hebrewForm->id)->delete();
+        }
 
         if ($request->boolean('enrichment_flow')) {
             if (HebrewForm::pendingEnrichment()->exists()) {

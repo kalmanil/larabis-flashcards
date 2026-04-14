@@ -39,7 +39,7 @@ class LoginTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $response->assertRedirect('/admin');
+        $response->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($user);
     }
 
@@ -118,7 +118,7 @@ class LoginTest extends TestCase
             'remember' => true,
         ]);
 
-        $response->assertRedirect('/admin');
+        $response->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($user);
 
         // Check that remember token cookie is set

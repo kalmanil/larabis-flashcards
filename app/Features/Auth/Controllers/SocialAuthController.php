@@ -43,7 +43,7 @@ class SocialAuthController
             // Login user
             Auth::login($user, true);
 
-            return redirect()->intended('/admin');
+            return redirect()->intended('/dashboard');
         } catch (\Exception $e) {
             return redirect('/login')->withErrors([
                 'social' => 'Authentication failed. Please try again.',

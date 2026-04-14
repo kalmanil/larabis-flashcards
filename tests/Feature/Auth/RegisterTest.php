@@ -36,7 +36,7 @@ class RegisterTest extends TestCase
             'password_confirmation' => 'password123',
         ]);
 
-        $response->assertRedirect('/admin');
+        $response->assertRedirect('/dashboard');
 
         $this->assertDatabaseHas('users', [
             'email' => 'john@example.com',
@@ -77,7 +77,7 @@ class RegisterTest extends TestCase
             'password_confirmation' => 'password123',
         ]);
 
-        $response->assertRedirect('/admin');
+        $response->assertRedirect('/dashboard');
         $this->assertAuthenticated();
 
         $user = User::where('email', 'john@example.com')->first();

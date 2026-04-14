@@ -3,7 +3,10 @@
     (function () {
         const container = document.getElementById('entries-container');
         const addBtn = document.getElementById('add-entry-row');
-        const importBtn = document.getElementById('gemini-import-btn');
+        const importSpecs = [
+            { el: document.getElementById('gemini-import-btn'), source: 'gemini' },
+            { el: document.getElementById('openai-import-btn'), source: 'openai' },
+        ];
         const inputBorder = @json($wordFormInputBorderJs);
         const btnStressSmall = @json($btnStressSmall);
 
@@ -69,81 +72,92 @@
             });
         }
 
-        if (importBtn && container) {
-            importBtn.addEventListener('click', function () {
-                const wordInput = document.getElementById('form_text');
-                if (!wordInput || !wordInput.value.trim()) {
-                    alert('Enter a Hebrew form first.');
-                    return;
+        function runWordImport(importBtn, source) {
+            const wordInput = document.getElementById('form_text');
+            if (!wordInput || !wordInput.value.trim()) {
+                alert('Enter a Hebrew form first.');
+                return;
+            }
+            const word = wordInput.value.trim();
+            const url = '{{ route('flashcards.words.import') }}'
+                + '?source=' + encodeURIComponent(source)
+                + '&word=' + encodeURIComponent(word);
+
+            importBtn.disabled = true;
+
+            fetch(url, {
+                headers: {
+                    'Accept': 'application/json'
                 }
-                const word = wordInput.value.trim();
-                const url = '{{ route('flashcards.words.import') }}' + '?source=gemini&word=' + encodeURIComponent(word);
+            })
+                .then(function (res) {
+                    if (!res.ok) {
+                        throw new Error('HTTP ' + res.status);
+                    }
+                    return res.json();
+                })
+                .then(function (data) {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
 
-                importBtn.disabled = true;
+                    const transcription = document.getElementById('transcription_ru');
+                    const freqRank = document.getElementById('frequency_rank');
+                    const freqPerM = document.getElementById('frequency_per_million');
 
-                fetch(url, {
-                    headers: {
-                        'Accept': 'application/json'
+                    if (transcription && data.transcription_ru) {
+                        transcription.value = data.transcription_ru;
+                    }
+                    const shoreshEl = document.getElementById('shoresh_root');
+                    if (shoreshEl && data.shoresh_root) {
+                        shoreshEl.value = data.shoresh_root;
+                    }
+                    if (freqRank && data.frequency_rank !== null && typeof data.frequency_rank !== 'undefined') {
+                        freqRank.value = data.frequency_rank;
+                    }
+                    if (freqPerM && data.frequency_per_million !== null && typeof data.frequency_per_million !== 'undefined') {
+                        freqPerM.value = data.frequency_per_million;
+                    }
+
+                    const entries = Array.isArray(data.entries) ? data.entries : [];
+
+                    container.innerHTML = '';
+                    index = 0;
+                    entries.forEach(function (entry) {
+                        const row = createEntryRow(
+                            index,
+                            entry.translation_ru || '',
+                            entry.form_type || '',
+                            entry.transcription_ru || ''
+                        );
+                        container.appendChild(row);
+                        setupDelete(row);
+                        index++;
+                    });
+
+                    if (index === 0) {
+                        const row = createEntryRow(0, '', '', '');
+                        container.appendChild(row);
+                        setupDelete(row);
+                        index = 1;
                     }
                 })
-                    .then(function (res) {
-                        if (!res.ok) {
-                            throw new Error('HTTP ' + res.status);
-                        }
-                        return res.json();
-                    })
-                    .then(function (data) {
-                        if (data.error) {
-                            throw new Error(data.error);
-                        }
+                .catch(function (err) {
+                    console.error(err);
+                })
+                .finally(function () {
+                    importBtn.disabled = false;
+                });
+        }
 
-                        const transcription = document.getElementById('transcription_ru');
-                        const freqRank = document.getElementById('frequency_rank');
-                        const freqPerM = document.getElementById('frequency_per_million');
-
-                        if (transcription && data.transcription_ru) {
-                            transcription.value = data.transcription_ru;
-                        }
-                        const shoreshEl = document.getElementById('shoresh_root');
-                        if (shoreshEl && data.shoresh_root) {
-                            shoreshEl.value = data.shoresh_root;
-                        }
-                        if (freqRank && data.frequency_rank !== null && typeof data.frequency_rank !== 'undefined') {
-                            freqRank.value = data.frequency_rank;
-                        }
-                        if (freqPerM && data.frequency_per_million !== null && typeof data.frequency_per_million !== 'undefined') {
-                            freqPerM.value = data.frequency_per_million;
-                        }
-
-                        const entries = Array.isArray(data.entries) ? data.entries : [];
-
-                        container.innerHTML = '';
-                        index = 0;
-                        entries.forEach(function (entry) {
-                            const row = createEntryRow(
-                                index,
-                                entry.translation_ru || '',
-                                entry.form_type || '',
-                                entry.transcription_ru || ''
-                            );
-                            container.appendChild(row);
-                            setupDelete(row);
-                            index++;
-                        });
-
-                        if (index === 0) {
-                            const row = createEntryRow(0, '', '', '');
-                            container.appendChild(row);
-                            setupDelete(row);
-                            index = 1;
-                        }
-                    })
-                    .catch(function (err) {
-                        console.error(err);
-                    })
-                    .finally(function () {
-                        importBtn.disabled = false;
-                    });
+        if (container) {
+            importSpecs.forEach(function (spec) {
+                if (!spec.el) {
+                    return;
+                }
+                spec.el.addEventListener('click', function () {
+                    runWordImport(spec.el, spec.source);
+                });
             });
         }
     })();

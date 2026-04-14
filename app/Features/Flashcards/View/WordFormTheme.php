@@ -20,7 +20,7 @@ final class WordFormTheme
             ? 'w-full border border-gray-200 rounded-xl px-3 py-2 text-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500'
             : 'w-full border rounded px-3 py-2 text-lg';
         $btnPrimary = $theme === 'default'
-            ? 'px-3 py-2 text-sm bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none'
+            ? 'px-4 py-2 text-sm bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none'
             : 'px-3 py-2 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700';
         $btnStress = $theme === 'default'
             ? 'px-3 py-2 text-sm bg-indigo-100 text-indigo-800 rounded-xl hover:bg-indigo-200 focus:ring-2 focus:ring-indigo-500'

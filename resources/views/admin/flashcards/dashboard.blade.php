@@ -17,6 +17,10 @@
         <nav class="mb-8 p-4 bg-gray-50 border-2 border-gray-200 rounded-xl" aria-label="App menu">
             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Menu</p>
             <div class="flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium">
+                @if(auth()->user()?->isStaff())
+                    <a href="{{ route('flashcards.staff.dashboard') }}" class="text-indigo-600 hover:text-indigo-800 hover:underline font-semibold">Staff</a>
+                    <span class="text-gray-300" aria-hidden="true">|</span>
+                @endif
                 <a href="{{ route('flashcards.learn.config') }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">Learn</a>
                 <span class="text-gray-300" aria-hidden="true">|</span>
                 <a href="{{ route('flashcards.words.index') }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">Words</a>

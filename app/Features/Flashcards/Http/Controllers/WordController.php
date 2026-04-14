@@ -2,6 +2,9 @@
 
 namespace App\Features\Flashcards\Http\Controllers;
 
+use App\Features\Flashcards\Http\Requests\BulkQueueHebrewWordsRequest;
+use App\Features\Flashcards\Http\Requests\StoreHebrewFormRequest;
+use App\Features\Flashcards\Http\Requests\UpdateHebrewFormRequest;
 use App\Features\Flashcards\Models\HebrewForm;
 use App\Features\Flashcards\Models\Language;
 use App\Features\Flashcards\Models\Shoresh;
@@ -9,9 +12,7 @@ use App\Features\Flashcards\Models\Translation;
 use App\Features\Flashcards\Services\BulkWordLineParser;
 use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
 use App\Features\Flashcards\Services\WordImport\GeminiWordImportSource;
-use App\Features\Flashcards\Http\Requests\BulkQueueHebrewWordsRequest;
-use App\Features\Flashcards\Http\Requests\StoreHebrewFormRequest;
-use App\Features\Flashcards\Http\Requests\UpdateHebrewFormRequest;
+use App\Features\Flashcards\Services\WordImport\OpenAiWordImportSource;
 use App\Helpers\TenancyHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,7 +24,7 @@ class WordController
         $user = Auth::user();
         $deck = $user->decks()->where('is_default', true)->first();
 
-        if (!$deck) {
+        if (! $deck) {
             $deck = $user->decks()->create([
                 'name' => 'My deck',
                 'slug' => 'default',
@@ -46,7 +47,7 @@ class WordController
         }
 
         // Structured new entries: translation + form_type (+ implied sense order)
-        if ($lang && !empty($newEntries)) {
+        if ($lang && ! empty($newEntries)) {
             foreach ($newEntries as $index => $entry) {
                 $text = trim((string) ($entry['translation_ru'] ?? ''));
                 if ($text === '') {
@@ -78,7 +79,7 @@ class WordController
         }
 
         // Legacy support: plain list of new RU translations (no per-sense form type)
-        if ($lang && !empty($newRu)) {
+        if ($lang && ! empty($newRu)) {
             foreach ($newRu as $text) {
                 $text = trim((string) $text);
                 if ($text === '') {
@@ -90,7 +91,7 @@ class WordController
                     ['language_id' => $lang->id, 'text' => $text]
                 );
 
-                if (!array_key_exists($t->id, $syncData)) {
+                if (! array_key_exists($t->id, $syncData)) {
                     $syncData[$t->id] = [];
                 }
             }
@@ -159,6 +160,7 @@ class WordController
         foreach ($unique as $w) {
             if (HebrewForm::where('form_text', $w)->exists()) {
                 $skipped++;
+
                 continue;
             }
 
@@ -312,6 +314,7 @@ class WordController
     public function destroy(HebrewForm $hebrewForm)
     {
         $hebrewForm->delete();
+
         return redirect()->route('flashcards.words.index')
             ->with('success', 'Word deleted.');
     }
@@ -336,10 +339,11 @@ class WordController
 
         $sources = [
             'gemini' => app(GeminiWordImportSource::class),
+            'openai' => app(OpenAiWordImportSource::class),
         ];
 
         $source = $sources[$sourceKey] ?? null;
-        if (!$source) {
+        if (! $source) {
             return response()->json(['error' => 'No import source configured'], 400, [], JSON_UNESCAPED_UNICODE);
         }
 
@@ -347,6 +351,7 @@ class WordController
         if ($data === null) {
             return response()->json(['error' => 'No data found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
+
         return response()->json($data, 200, [], JSON_UNESCAPED_UNICODE);
     }
 }

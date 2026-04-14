@@ -36,7 +36,11 @@ tenants/flashcards/
 ├── database/migrations/    # Tenant DB: social_accounts, users.avatar, flashcards tables
 ├── database/seeders/       # LanguageSeeder (he, ru, en)
 ├── resources/views/         # default + admin Blade views (login, register, home, flashcards/*)
-├── routes/web.php          # Auth + social + flashcards routes
+├── routes/
+│   ├── web.php             # Loads routes/views/{DOMAIN_CODE}/web.php only
+│   └── views/
+│       ├── default/web.php # Learner host: auth + dashboard/words/decks/learn
+│       └── admin/web.php   # Admin host: same + staff + subadmins
 ├── tests/
 │   ├── Unit/Auth/Models/
 │   └── Feature/Auth/
@@ -62,6 +66,8 @@ This tenant does not run standalone. Install and use it from the **Larabis root*
 
 ## Routes
 
+`routes/web.php` does not register routes itself: it **`require`s** exactly one file under `routes/views/{code}/web.php`, where `code` comes from `DOMAIN_CODE` (or `config('domain.code')`, default `default`). Each vhost should set `DOMAIN_CODE` before Laravel boots (e.g. per-domain `index.php` + `config.php`). **Larabis does not need changes** — it still loads `tenants/flashcards/routes/web.php`.
+
 | Method | URI | Name | Description |
 |--------|-----|------|-------------|
 | GET | `/login` | `login.form` | Login form |
@@ -74,27 +80,53 @@ This tenant does not run standalone. Install and use it from the **Larabis root*
 
 `{provider}` is restricted to `facebook` or `google`.
 
-### Flashcards (auth required, prefix `/admin`)
+### Flashcards app (auth required, prefix `/dashboard`)
 
 | Method | URI | Name | Description |
 |--------|-----|------|-------------|
-| GET | `/admin` | `flashcards.dashboard` | Dashboard (Start learning, Add words, Browse words, My cards) |
-| GET | `/admin/words` | `flashcards.words.index` | Browse tenant word pool |
-| GET | `/admin/words/create` | `flashcards.words.create` | Add word form |
-| GET | `/admin/words/import` | `flashcards.words.import` | Import word data (query: `word`, `source`) |
-| POST | `/admin/words` | `flashcards.words.store` | Store word |
-| GET | `/admin/words/{id}/edit` | `flashcards.words.edit` | Edit word |
-| PUT | `/admin/words/{id}` | `flashcards.words.update` | Update word |
-| DELETE | `/admin/words/{id}` | `flashcards.words.destroy` | Delete word |
-| POST | `/admin/words/{id}/add-to-deck` | `flashcards.words.add-to-deck` | Add to my deck |
-| GET | `/admin/decks` | `flashcards.decks.index` | Redirect to default deck |
-| GET | `/admin/decks/{id}` | `flashcards.decks.show` | My cards |
-| DELETE | `/admin/decks/{id}/cards/{id}` | `flashcards.decks.remove-card` | Remove from deck |
-| GET | `/admin/learn` | `flashcards.learn.config` | Session config (lang, front type) |
-| POST | `/admin/learn/start` | `flashcards.learn.start` | Start session |
-| GET | `/admin/learn/session` | `flashcards.learn.session` | Current card |
-| POST | `/admin/learn/answer` | `flashcards.learn.answer` | Submit known/not known |
-| POST | `/admin/learn/reset` | `flashcards.progress.reset` | Reset all progress |
+| GET | `/dashboard` | `flashcards.dashboard` | Dashboard (Start learning, Add words, Browse words, My cards) |
+| GET | `/dashboard/words` | `flashcards.words.index` | Browse tenant word pool |
+| GET | `/dashboard/words/create` | `flashcards.words.create` | Add word form |
+| GET | `/dashboard/words/import` | `flashcards.words.import` | Import word data (query: `word`, `source`) |
+| POST | `/dashboard/words` | `flashcards.words.store` | Store word |
+| GET | `/dashboard/words/{id}/edit` | `flashcards.words.edit` | Edit word |
+| PUT | `/dashboard/words/{id}` | `flashcards.words.update` | Update word |
+| DELETE | `/dashboard/words/{id}` | `flashcards.words.destroy` | Delete word |
+| POST | `/dashboard/words/{id}/add-to-deck` | `flashcards.words.add-to-deck` | Add to my deck |
+| GET | `/dashboard/decks` | `flashcards.decks.index` | Redirect to default deck |
+| GET | `/dashboard/decks/{id}` | `flashcards.decks.show` | My cards |
+| DELETE | `/dashboard/decks/{id}/cards/{id}` | `flashcards.decks.remove-card` | Remove from deck |
+| GET | `/dashboard/learn` | `flashcards.learn.config` | Session config (lang, front type) |
+| POST | `/dashboard/learn/start` | `flashcards.learn.start` | Start session |
+| GET | `/dashboard/learn/session` | `flashcards.learn.session` | Current card |
+| POST | `/dashboard/learn/answer` | `flashcards.learn.answer` | Submit known/not known |
+| POST | `/dashboard/learn/reset` | `flashcards.progress.reset` | Reset all progress |
+
+### Staff (admin host only: TenantView `code` = `admin`, e.g. `admin.example.com`)
+
+Requires `subadmin` or `superadmin` role. No automatic redirects; learners without staff get **403** on these URLs.
+
+| Method | URI | Name | Description |
+|--------|-----|------|-------------|
+| GET | `/dashboard/staff` | `flashcards.staff.dashboard` | Staff home (links to tools) |
+| GET | `/dashboard/staff/decks` | `flashcards.staff.decks.index` | All users’ decks (read-only overview) |
+| GET | `/dashboard/staff/words/export.ndjson` | `flashcards.staff.words.export.ndjson` | Tenant word pool NDJSON export |
+
+### Superadmin only (same host rules as staff)
+
+| Method | URI | Name | Description |
+|--------|-----|------|-------------|
+| GET | `/dashboard/staff/subadmins` | `flashcards.staff.subadmins.index` | List / create subadmins |
+| POST | `/dashboard/staff/subadmins` | `flashcards.staff.subadmins.store` | Create subadmin account |
+| DELETE | `/dashboard/staff/subadmins/{user}` | `flashcards.staff.subadmins.destroy` | Remove subadmin |
+
+**Initial superadmin:** set `FLASHCARDS_SUPERADMIN_EMAIL` (and optionally `FLASHCARDS_SUPERADMIN_PASSWORD`) in `tenants/flashcards/.env`, then from Larabis root with `DOMAIN_TENANT_ID=flashcards` in the environment:
+
+```bash
+php artisan flashcards:ensure-superadmin
+```
+
+The command is idempotent: it creates or promotes the email once; it refuses if another superadmin already exists with a different address.
 
 ## Page Data
 
@@ -107,7 +139,7 @@ Follows Larabis page-data architecture: **service classes** (not traits), implem
 
 ## Database (Tenant)
 
-- **users:** Extended with nullable `avatar` (migration in this repo).
+- **users:** Extended with nullable `avatar` and `role` (`user`, `subadmin`, `superadmin`; default `user`) (migrations in this repo).
 - **social_accounts:** `user_id`, `provider`, `provider_id`, tokens, `expires_at`; unique on `(provider, provider_id)`; cascade delete from user.
 - **Flashcards:** `languages`, `shoresh`, `hebrew_forms` (with frequency_rank, frequency_per_million), `translations`, `hebrew_form_translation`, `decks`, `deck_cards`, `user_card_progress`.
 

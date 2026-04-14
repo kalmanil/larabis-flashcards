@@ -33,10 +33,11 @@ class RegisterController
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'role' => User::ROLE_USER,
         ]);
 
         Auth::login($user);
 
-        return redirect('/admin');
+        return redirect('/dashboard');
     }
 }

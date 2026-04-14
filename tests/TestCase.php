@@ -66,6 +66,13 @@ abstract class TestCase extends BaseTestCase
             });
         }
 
+        if (!Schema::hasColumn('users', 'role')) {
+            Schema::table('users', function ($table) {
+                $after = Schema::hasColumn('users', 'avatar') ? 'avatar' : 'password';
+                $table->string('role', 32)->default('user')->after($after);
+            });
+        }
+
         // Drop and recreate social_accounts to ensure clean state
         Schema::dropIfExists('social_accounts');
         

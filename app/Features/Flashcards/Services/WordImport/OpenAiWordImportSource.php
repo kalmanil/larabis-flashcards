@@ -5,30 +5,30 @@ namespace App\Features\Flashcards\Services\WordImport;
 use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
 use Illuminate\Support\Facades\Http;
 
-class GeminiWordImportSource implements WordImportSourceInterface
+class OpenAiWordImportSource implements WordImportSourceInterface
 {
     public function getKey(): string
     {
-        return 'gemini';
+        return 'openai';
     }
 
     public function getLabel(): string
     {
-        return 'Gemini AI';
+        return 'OpenAI';
     }
 
     public function fetch(string $hebrewFormText): ?array
     {
-        $apiKey = (string) config('services.gemini.key', env('GEMINI_API_KEY'));
+        $apiKey = (string) config('services.openai.key', env('OPENAI_API_KEY'));
 
         if ($apiKey === '') {
             return null;
         }
 
-        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='.urlencode($apiKey);
+        $url = 'https://api.openai.com/v1/responses';
 
         $prompt = "Analyze the Hebrew word '".$hebrewFormText."' and return a JSON object with exactly these keys: "
-            ."'transcription_ru' (string): Practical Russian transliteration in Cyrillic only (as in Russian Hebrew textbooks)—not English/Latin romanization, not IPA. Optional lone lowercase h for voiceless glottal ה if needed. Fully lowercase. Mark stress with Unicode combining acute (U+0301) immediately after the stressed vowel only (example: шало́м). No other stress markers. "
+            ."'transcription_ru' (string): Practical Russian transliteration in Cyrillic only (as in Russian Hebrew textbooks)—not English/Latin romanization, not IPA. Optional lone lowercase h for voiceless glottal ה only if needed. Fully lowercase. Mark stress with Unicode combining acute (U+0301) immediately after the stressed vowel only (example: шало́м). No other stress markers. "
             ."'shoresh_root' (string): The 2 or 4 letter Hebrew root (no hyphens - e.g., קדם). "
             ."'frequency_rank' (number): frequency rank of the word. "
             ."'frequency_per_million' (number): usage frequency per million words. "
@@ -39,39 +39,34 @@ class GeminiWordImportSource implements WordImportSourceInterface
             .'Return only one translation per sense. Return ONLY valid JSON, with no extra commentary or code fences.';
 
         $payload = [
-            'contents' => [
-                [
-                    'parts' => [
-                        ['text' => $prompt],
-                    ],
-                ],
-            ],
-            'generationConfig' => [
-                'responseMimeType' => 'application/json',
-            ],
+            'model' => 'gpt-5.4-mini',
+            'input' => $prompt,
         ];
 
         $response = Http::withoutVerifying()
-            ->withHeaders(['Content-Type' => 'application/json'])
+            ->withHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Bearer '.$apiKey,
+            ])
             ->post($url, $payload);
 
         if (! $response->ok()) {
             return null;
         }
 
-        $outer = $response->json();
-        $text = $outer['candidates'][0]['content']['parts'][0]['text'] ?? null;
+        $data = $response->json();
+        $text = $this->extractOutputTextFromResponses($data);
 
         if (! is_string($text) || trim($text) === '') {
             return null;
         }
 
+        $text = $this->stripJsonFences($text);
         $inner = json_decode($text, true);
         if (! is_array($inner)) {
             return null;
         }
 
-        // Normalize keys and types to what the app expects.
         $entries = [];
         if (isset($inner['entries']) && is_array($inner['entries'])) {
             foreach ($inner['entries'] as $entry) {
@@ -108,5 +103,40 @@ class GeminiWordImportSource implements WordImportSourceInterface
             'frequency_per_million' => $frequencyPerMillion !== null ? (float) $frequencyPerMillion : null,
             'entries' => $entries,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function extractOutputTextFromResponses(?array $data): ?string
+    {
+        if (! is_array($data) || ! isset($data['output']) || ! is_array($data['output'])) {
+            return null;
+        }
+
+        foreach ($data['output'] as $block) {
+            if (($block['type'] ?? '') !== 'message') {
+                continue;
+            }
+            foreach ($block['content'] ?? [] as $part) {
+                if (($part['type'] ?? '') === 'output_text' && isset($part['text'])) {
+                    return (string) $part['text'];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function stripJsonFences(string $text): string
+    {
+        $t = trim($text);
+        if (! str_starts_with($t, '```')) {
+            return $t;
+        }
+        $t = preg_replace('/^```(?:json)?\s*/i', '', $t) ?? $t;
+        $t = preg_replace('/\s*```\s*$/', '', $t) ?? $t;
+
+        return trim($t);
     }
 }

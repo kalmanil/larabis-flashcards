@@ -2,7 +2,8 @@
 @php
     $word = $word ?? null;
     $formTextReadonly = $formTextReadonly ?? false;
-    $geminiImportLabel = $geminiImportLabel ?? ($word ? 'Gemini' : 'Gemini');
+    $geminiImportLabel = 'G';
+    $openaiImportLabel = 'O';
     $formTextClass = trim('flex-1 ' . $inputClassLg . ($formTextReadonly ? ' bg-gray-50' : ''));
 @endphp
 
@@ -18,6 +19,11 @@
                 id="gemini-import-btn"
                 class="{{ $btnPrimary }} disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none">
             {{ $geminiImportLabel }}
+        </button>
+        <button type="button"
+                id="openai-import-btn"
+                class="{{ $btnPrimary }} disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none">
+            {{ $openaiImportLabel }}
         </button>
     </div>
 </div>

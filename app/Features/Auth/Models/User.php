@@ -10,12 +10,19 @@ class User extends Authenticatable
 {
     use Notifiable;
 
+    public const ROLE_USER = 'user';
+
+    public const ROLE_SUBADMIN = 'subadmin';
+
+    public const ROLE_SUPERADMIN = 'superadmin';
+
     protected $fillable = [
         'name',
         'email',
         'password',
         'avatar',
         'email_verified_at',
+        'role',
     ];
 
     protected $hidden = [
@@ -70,5 +77,23 @@ class User extends Authenticatable
         return $this->socialAccounts()
             ->where('provider', $provider)
             ->exists();
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === self::ROLE_SUPERADMIN;
+    }
+
+    public function isSubadmin(): bool
+    {
+        return $this->role === self::ROLE_SUBADMIN;
+    }
+
+    /**
+     * Staff: subadmin or superadmin (tenant management UI on admin host).
+     */
+    public function isStaff(): bool
+    {
+        return $this->isSubadmin() || $this->isSuperAdmin();
     }
 }

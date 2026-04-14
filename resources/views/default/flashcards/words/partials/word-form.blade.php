@@ -8,7 +8,6 @@
     @include('default.flashcards.words.partials.word-form-fields', [
         'word' => null,
         'formTextReadonly' => false,
-        'geminiImportLabel' => 'Import from Gemini',
     ])
 
     @include('default.flashcards.words.partials.word-form-add-to-deck')

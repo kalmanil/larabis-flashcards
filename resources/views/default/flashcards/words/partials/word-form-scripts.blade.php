@@ -6,6 +6,7 @@
         const importSpecs = [
             { el: document.getElementById('gemini-import-btn'), source: 'gemini' },
             { el: document.getElementById('openai-import-btn'), source: 'openai' },
+            { el: document.getElementById('united-import-btn'), source: 'united' },
         ];
         const inputBorder = @json($wordFormInputBorderJs);
         const btnStressSmall = @json($btnStressSmall);

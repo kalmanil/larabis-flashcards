@@ -39,7 +39,7 @@ class OpenAiWordImportSource implements WordImportSourceInterface
             .'Return only one translation per sense. Return ONLY valid JSON, with no extra commentary or code fences.';
 
         $payload = [
-            'model' => 'gpt-5.4-mini',
+            'model' => 'gpt-5.4',
             'input' => $prompt,
         ];
 

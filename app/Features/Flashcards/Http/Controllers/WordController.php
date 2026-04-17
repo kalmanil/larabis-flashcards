@@ -13,6 +13,7 @@ use App\Features\Flashcards\Services\BulkWordLineParser;
 use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
 use App\Features\Flashcards\Services\WordImport\GeminiWordImportSource;
 use App\Features\Flashcards\Services\WordImport\OpenAiWordImportSource;
+use App\Features\Flashcards\Services\WordImport\UnitedWordImportSource;
 use App\Helpers\TenancyHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -340,6 +341,7 @@ class WordController
         $sources = [
             'gemini' => app(GeminiWordImportSource::class),
             'openai' => app(OpenAiWordImportSource::class),
+            'united' => app(UnitedWordImportSource::class),
         ];
 
         $source = $sources[$sourceKey] ?? null;

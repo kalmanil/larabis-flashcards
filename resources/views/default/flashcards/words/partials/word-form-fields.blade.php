@@ -4,6 +4,7 @@
     $formTextReadonly = $formTextReadonly ?? false;
     $geminiImportLabel = 'G';
     $openaiImportLabel = 'O';
+    $unitedImportLabel = 'U';
     $formTextClass = trim('flex-1 ' . $inputClassLg . ($formTextReadonly ? ' bg-gray-50' : ''));
 @endphp
 
@@ -24,6 +25,12 @@
                 id="openai-import-btn"
                 class="{{ $btnPrimary }} disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none">
             {{ $openaiImportLabel }}
+        </button>
+        <button type="button"
+                id="united-import-btn"
+                title="Merge Gemini + OpenAI"
+                class="{{ $btnPrimary }} disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none">
+            {{ $unitedImportLabel }}
         </button>
     </div>
 </div>

@@ -1,4 +1,4 @@
-{{-- Requires WordFormTheme::variables() extract() earlier in the same view (sets $wordFormInputBorderJs, $btnStressSmall). --}}
+{{-- Requires WordFormThemeFactory::variables() extract() earlier in the same view (sets $wordFormInputBorderJs, $btnStressSmall). --}}
 <script>
     (function () {
         const container = document.getElementById('entries-container');

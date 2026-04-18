@@ -1,4 +1,4 @@
-{{-- Requires WordFormTheme::variables() extract() earlier in the same view (sets $inputClass, etc.). --}}
+{{-- Requires WordFormThemeFactory::variables() extract() earlier in the same view (sets $inputClass, etc.). --}}
 @php
     $word = $word ?? null;
     $formTextReadonly = $formTextReadonly ?? false;

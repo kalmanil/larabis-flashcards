@@ -1,5 +1,5 @@
 @php
-    extract(\App\Features\Flashcards\View\WordFormTheme::variables($theme ?? 'default'));
+    extract(app(\App\Features\Flashcards\View\Services\WordFormThemeFactory::class)->variables($theme ?? 'default'));
 @endphp
 
 <form action="{{ route('flashcards.words.store') }}" method="POST" class="{{ $wordFormSpacing }}">

@@ -22,7 +22,7 @@
                 @endif
 
                 @php
-                    extract(\App\Features\Flashcards\View\WordFormTheme::variables('default'));
+                    extract(app(\App\Features\Flashcards\View\Services\WordFormThemeFactory::class)->variables('default'));
                 @endphp
 
                 <form action="{{ route('flashcards.words.update', $word) }}" method="POST" class="{{ $wordFormSpacing }}">

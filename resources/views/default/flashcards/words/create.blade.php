@@ -21,6 +21,10 @@
                     </div>
                 @endif
 
+                @if (session('success'))
+                    <div class="mb-6 p-4 bg-green-50 border border-green-200 text-green-800 rounded-xl text-sm">{{ session('success') }}</div>
+                @endif
+
                 @include('default.flashcards.words.partials.word-form', ['theme' => 'default'])
             </div>
         </div>

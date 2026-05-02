@@ -4,9 +4,13 @@
     $transcriptionRu = $transcriptionRu ?? '';
 @endphp
 <div class="entry-row relative border border-gray-200 rounded-lg p-4 space-y-3 bg-gray-50/90">
-    <div class="flex items-center justify-between gap-2">
+    <div class="flex items-center justify-between gap-2 flex-wrap">
         <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Sense</span>
-        <button type="button" class="entry-delete min-h-[2.5rem] min-w-[2.5rem] inline-flex items-center justify-center text-lg leading-none text-red-600 hover:bg-red-50 rounded-lg active:bg-red-100" title="Remove sense">×</button>
+        <div class="flex items-center gap-1 shrink-0">
+            <button type="button" class="entry-import-sense-db px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded hover:bg-gray-300" title="Add one sense from database">DB</button>
+            <button type="button" class="entry-import-sense-gemini px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded hover:bg-gray-300" title="Suggest one more sense (Gemini)">G</button>
+            <button type="button" class="entry-delete min-h-[2.5rem] min-w-[2.5rem] inline-flex items-center justify-center text-lg leading-none text-red-600 hover:bg-red-50 rounded-lg active:bg-red-100" title="Remove sense">×</button>
+        </div>
     </div>
     <div class="space-y-1">
         <label class="block text-xs font-medium text-gray-600">Translation (RU)</label>

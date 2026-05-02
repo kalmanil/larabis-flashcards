@@ -148,12 +148,12 @@
                 </div>
                 @endif
 
-                <!-- Register Link -->
+                <!-- Staff only: no public registration on this host -->
                 <div class="mt-4 text-center">
                     <p class="text-sm text-gray-600">
-                        Don't have an account?
-                        <a href="{{ route('register') }}" class="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200">
-                            Sign up
+                        Staff accounts only. Need a learner account?
+                        <a href="http://flashcards.test:8000/register" class="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200">
+                            Register on the main site
                         </a>
                     </p>
                 </div>

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Features\Auth\Controllers;
+namespace App\Features\Auth\Controllers\Default;
 
 use App\Helpers\TenancyHelper;
 use Illuminate\Http\Request;
@@ -9,17 +9,11 @@ use Illuminate\Validation\ValidationException;
 
 class LoginController
 {
-    /**
-     * Show login form
-     */
     public function showLoginForm()
     {
         return TenancyHelper::view('login');
     }
 
-    /**
-     * Handle login request
-     */
     public function login(Request $request)
     {
         $request->validate([

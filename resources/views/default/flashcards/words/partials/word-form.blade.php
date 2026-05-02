@@ -12,8 +12,9 @@
 
     @include('default.flashcards.words.partials.word-form-add-to-deck')
 
-    <div class="flex gap-4 pt-2">
-        <button type="submit" class="{{ $wordFormBtnSubmit }}">Save</button>
+    <div class="flex flex-wrap gap-3 pt-2">
+        <button type="submit" name="save_continue" value="1" class="{{ $wordFormBtnSubmit }}">Save and continue</button>
+        <button type="submit" class="{{ $wordFormBtnSecondary }}">Save and exit</button>
         <a href="{{ route('flashcards.words.index') }}" class="{{ $wordFormBtnSecondary }}">Cancel</a>
     </div>
 </form>

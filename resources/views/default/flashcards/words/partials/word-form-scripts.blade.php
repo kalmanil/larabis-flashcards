@@ -4,20 +4,132 @@
         const container = document.getElementById('entries-container');
         const addBtn = document.getElementById('add-entry-row');
         const importSpecs = [
+            { el: document.getElementById('db-import-btn'), source: 'db' },
             { el: document.getElementById('gemini-import-btn'), source: 'gemini' },
-            { el: document.getElementById('openai-import-btn'), source: 'openai' },
-            { el: document.getElementById('united-import-btn'), source: 'united' },
         ];
         const inputBorder = @json($wordFormInputBorderJs);
         const btnStressSmall = @json($btnStressSmall);
+
+        function getCsrfToken() {
+            const tokenInput = document.querySelector('form input[name="_token"]');
+            return tokenInput ? tokenInput.value : '';
+        }
+
+        function collectExistingRuTranslations(excludeRow) {
+            const out = [];
+            if (!container) {
+                return out;
+            }
+            container.querySelectorAll('.entry-row').forEach(function (row) {
+                if (excludeRow && row === excludeRow) {
+                    return;
+                }
+                const inp = row.querySelector('input[name*="[translation_ru]"]');
+                if (!inp) {
+                    return;
+                }
+                const v = (inp.value || '').trim();
+                if (v !== '') {
+                    out.push(v);
+                }
+            });
+            return out;
+        }
+
+        function fillEntryRowFromImport(targetRow, ent) {
+            const trInp = targetRow.querySelector('input[name*="[translation_ru]"]');
+            const ftInp = targetRow.querySelector('input[name*="[form_type]"]');
+            const prInp = targetRow.querySelector('input[name*="[transcription_ru]"]');
+            if (trInp) {
+                trInp.value = ent.translation_ru != null ? String(ent.translation_ru) : '';
+            }
+            if (ftInp) {
+                ftInp.value = ent.form_type != null ? String(ent.form_type) : '';
+            }
+            if (prInp) {
+                prInp.value = ent.transcription_ru != null ? String(ent.transcription_ru) : '';
+            }
+        }
+
+        function runExtraSenseImport(importBtn, source, targetRow) {
+            const wordInput = document.getElementById('form_text');
+            if (!wordInput || !wordInput.value.trim()) {
+                alert('Enter a Hebrew form first.');
+                return;
+            }
+            const csrf = getCsrfToken();
+            if (!csrf) {
+                console.error('[flashcards.extraSenseImport] CSRF token not found');
+                return;
+            }
+            const word = wordInput.value.trim();
+            const url = @json(route('flashcards.words.import-extra-sense'));
+            importBtn.disabled = true;
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    form_text: word,
+                    source: source,
+                    existing_translations: collectExistingRuTranslations(targetRow),
+                    _token: csrf,
+                }),
+            })
+                .then(function (res) {
+                    return res.json().then(function (body) {
+                        return { res: res, body: body };
+                    }).catch(function () {
+                        return { res: res, body: {} };
+                    });
+                })
+                .then(function (out) {
+                    const res = out.res;
+                    const data = out.body && typeof out.body === 'object' ? out.body : {};
+                    if (!res.ok || data.error) {
+                        const err = new Error(data.error || ('HTTP ' + res.status));
+                        err.httpStatus = res.status;
+                        err.payload = data;
+                        throw err;
+                    }
+                    const ent = data.entry;
+                    if (!ent || typeof ent !== 'object') {
+                        const err = new Error('Invalid response: missing entry');
+                        err.payload = data;
+                        throw err;
+                    }
+                    if (!targetRow || !container || !container.contains(targetRow)) {
+                        return;
+                    }
+                    fillEntryRowFromImport(targetRow, ent);
+                })
+                .catch(function (err) {
+                    if (err && err.payload) {
+                        console.error(err.message || err, err.payload);
+                    } else {
+                        console.error(err);
+                    }
+                })
+                .finally(function () {
+                    importBtn.disabled = false;
+                });
+        }
 
         function createEntryRow(index, translation, formType, transcriptionOverride) {
             const row = document.createElement('div');
             row.className = 'entry-row relative border border-gray-200 rounded-xl p-4 space-y-3 bg-gray-50/80 shadow-sm';
             row.innerHTML = '' +
-                '<div class="flex items-center justify-between gap-2">' +
+                '<div class="flex items-center justify-between gap-2 flex-wrap">' +
                 '<span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Sense</span>' +
+                '<div class="flex items-center gap-1 shrink-0">' +
+                '<button type="button" class="entry-import-sense-db ' + btnStressSmall + '" title="Add one sense from database">DB</button>' +
+                '<button type="button" class="entry-import-sense-gemini ' + btnStressSmall + '" title="Suggest one more sense (Gemini)">G</button>' +
                 '<button type="button" class="entry-delete min-h-[2.5rem] min-w-[2.5rem] inline-flex items-center justify-center text-lg leading-none text-red-600 hover:bg-red-50 rounded-lg active:bg-red-100" title="Remove sense">×</button>' +
+                '</div>' +
                 '</div>' +
                 '<div class="space-y-1">' +
                 '<label class="block text-xs font-medium text-gray-600">Translation (RU)</label>' +
@@ -73,6 +185,40 @@
             });
         }
 
+        function clearNumberInput(el) {
+            if (!el) {
+                return;
+            }
+            el.value = '';
+            if ('defaultValue' in el) {
+                el.defaultValue = '';
+            }
+        }
+
+        function clearImportFilledFields() {
+            const shoreshEl = document.getElementById('shoresh_root');
+            if (shoreshEl) {
+                shoreshEl.value = '';
+            }
+            const transcription = document.getElementById('transcription_ru');
+            if (transcription) {
+                transcription.value = '';
+            }
+            clearNumberInput(document.getElementById('frequency_rank'));
+            clearNumberInput(document.getElementById('frequency_per_million'));
+
+            const entriesEl = document.getElementById('entries-container');
+            if (!entriesEl) {
+                return;
+            }
+            entriesEl.innerHTML = '';
+            index = 0;
+            const row = createEntryRow(0, '', '', '');
+            entriesEl.appendChild(row);
+            setupDelete(row);
+            index = 1;
+        }
+
         function runWordImport(importBtn, source) {
             const wordInput = document.getElementById('form_text');
             if (!wordInput || !wordInput.value.trim()) {
@@ -92,37 +238,72 @@
                 }
             })
                 .then(function (res) {
-                    if (!res.ok) {
-                        throw new Error('HTTP ' + res.status);
-                    }
-                    return res.json();
+                    return res.json().then(function (body) {
+                        return { res: res, body: body };
+                    }).catch(function () {
+                        return { res: res, body: {} };
+                    });
                 })
-                .then(function (data) {
-                    if (data.error) {
-                        throw new Error(data.error);
+                .then(function (out) {
+                    const res = out.res;
+                    const data = out.body && typeof out.body === 'object' ? out.body : {};
+
+                    if (!res.ok || data.error) {
+                        if (source === 'db' && data.code === 'WORD_NOT_IN_DATABASE') {
+                            clearImportFilledFields();
+                            console.log('[flashcards.wordImport]', {
+                                service: 'db',
+                                outcome: 'not_found',
+                                word: word,
+                                httpStatus: res.status,
+                                code: data.code,
+                                message: data.error || null,
+                            });
+                        }
+                        const err = new Error(data.error || ('HTTP ' + res.status));
+                        err.httpStatus = res.status;
+                        err.payload = data;
+                        throw err;
                     }
 
                     const transcription = document.getElementById('transcription_ru');
+                    const shoreshEl = document.getElementById('shoresh_root');
                     const freqRank = document.getElementById('frequency_rank');
                     const freqPerM = document.getElementById('frequency_per_million');
 
-                    if (transcription && data.transcription_ru) {
-                        transcription.value = data.transcription_ru;
+                    if (transcription) {
+                        transcription.value = (data.transcription_ru != null && String(data.transcription_ru).trim() !== '')
+                            ? data.transcription_ru
+                            : '';
                     }
-                    const shoreshEl = document.getElementById('shoresh_root');
-                    if (shoreshEl && data.shoresh_root) {
-                        shoreshEl.value = data.shoresh_root;
+                    if (shoreshEl) {
+                        shoreshEl.value = (data.shoresh_root != null && String(data.shoresh_root).trim() !== '')
+                            ? data.shoresh_root
+                            : '';
                     }
-                    if (freqRank && data.frequency_rank !== null && typeof data.frequency_rank !== 'undefined') {
-                        freqRank.value = data.frequency_rank;
+                    if (freqRank) {
+                        if (data.frequency_rank !== null && typeof data.frequency_rank !== 'undefined') {
+                            freqRank.value = data.frequency_rank;
+                        } else {
+                            clearNumberInput(freqRank);
+                        }
                     }
-                    if (freqPerM && data.frequency_per_million !== null && typeof data.frequency_per_million !== 'undefined') {
-                        freqPerM.value = data.frequency_per_million;
+                    if (freqPerM) {
+                        if (data.frequency_per_million !== null && typeof data.frequency_per_million !== 'undefined') {
+                            freqPerM.value = data.frequency_per_million;
+                        } else {
+                            clearNumberInput(freqPerM);
+                        }
                     }
 
                     const entries = Array.isArray(data.entries) ? data.entries : [];
 
-                    container.innerHTML = '';
+                    const entriesContainer = document.getElementById('entries-container');
+                    if (!entriesContainer) {
+                        console.error('[flashcards.wordImport] #entries-container not found');
+                        return;
+                    }
+                    entriesContainer.innerHTML = '';
                     index = 0;
                     entries.forEach(function (entry) {
                         const row = createEntryRow(
@@ -131,34 +312,54 @@
                             entry.form_type || '',
                             entry.transcription_ru || ''
                         );
-                        container.appendChild(row);
+                        entriesContainer.appendChild(row);
                         setupDelete(row);
                         index++;
                     });
 
                     if (index === 0) {
                         const row = createEntryRow(0, '', '', '');
-                        container.appendChild(row);
+                        entriesContainer.appendChild(row);
                         setupDelete(row);
                         index = 1;
                     }
                 })
                 .catch(function (err) {
-                    console.error(err);
+                    if (err && err.payload) {
+                        console.error(err.message || err, err.payload);
+                    } else {
+                        console.error(err);
+                    }
                 })
                 .finally(function () {
                     importBtn.disabled = false;
                 });
         }
 
+        importSpecs.forEach(function (spec) {
+            if (!spec.el) {
+                return;
+            }
+            spec.el.addEventListener('click', function () {
+                runWordImport(spec.el, spec.source);
+            });
+        });
+
         if (container) {
-            importSpecs.forEach(function (spec) {
-                if (!spec.el) {
+            container.addEventListener('click', function (e) {
+                const db = e.target.closest('.entry-import-sense-db');
+                const gem = e.target.closest('.entry-import-sense-gemini');
+                if (!db && !gem) {
                     return;
                 }
-                spec.el.addEventListener('click', function () {
-                    runWordImport(spec.el, spec.source);
-                });
+                const btn = db || gem;
+                const row = btn.closest('.entry-row');
+                if (!row || !container.contains(row)) {
+                    return;
+                }
+                e.preventDefault();
+                const source = db ? 'db' : 'gemini';
+                runExtraSenseImport(btn, source, row);
             });
         }
     })();

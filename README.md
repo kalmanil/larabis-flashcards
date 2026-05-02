@@ -21,7 +21,8 @@ tenants/flashcards/
 │   └── autoload.php       # Tenant autoloader; add new App\Features\* prefixes here
 ├── app/Features/
 │   ├── Auth/
-│   │   ├── Controllers/     # Login, Logout, Register, SocialAuth
+│   │   ├── Controllers/     # Logout (shared); Default/ & Admin/ login, register, social
+│   │   ├── Services/        # SocialAuthUserResolver (shared OAuth user linking)
 │   │   └── Models/          # User, SocialAccount
 │   ├── Flashcards/
 │   │   ├── Http/Controllers/   # Dashboard, Word, Deck, Learn
@@ -79,6 +80,8 @@ This tenant does not run standalone. Install and use it from the **Larabis root*
 | GET | `/auth/{provider}/callback` | `social.callback` | OAuth callback |
 
 `{provider}` is restricted to `facebook` or `google`.
+
+**Per view:** `DOMAIN_CODE=default` uses `App\Features\Auth\Controllers\Default\*` (any user may log in or register). The **admin** view uses `Controllers\Admin\*`: **staff only** (subadmin/superadmin) for email and social sign-in; **no** `/register` routes on the admin host.
 
 ### Flashcards app (auth required, prefix `/dashboard`)
 

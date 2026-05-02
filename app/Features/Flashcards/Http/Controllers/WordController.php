@@ -3,6 +3,7 @@
 namespace App\Features\Flashcards\Http\Controllers;
 
 use App\Features\Flashcards\Http\Requests\BulkQueueHebrewWordsRequest;
+use App\Features\Flashcards\Http\Requests\ImportExtraSenseRequest;
 use App\Features\Flashcards\Http\Requests\StoreHebrewFormRequest;
 use App\Features\Flashcards\Http\Requests\UpdateHebrewFormRequest;
 use App\Features\Flashcards\Models\HebrewForm;
@@ -11,6 +12,10 @@ use App\Features\Flashcards\Models\Shoresh;
 use App\Features\Flashcards\Models\Translation;
 use App\Features\Flashcards\Services\BulkWordLineParser;
 use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
+use App\Features\Flashcards\Services\SenseImport\DatabaseExtraSenseSource;
+use App\Features\Flashcards\Services\SenseImport\GeminiExtraSenseSource;
+use App\Features\Flashcards\Services\SenseImport\OpenAiExtraSenseSource;
+use App\Features\Flashcards\Services\WordImport\DBWordImportSource;
 use App\Features\Flashcards\Services\WordImport\GeminiWordImportSource;
 use App\Features\Flashcards\Services\WordImport\OpenAiWordImportSource;
 use App\Features\Flashcards\Services\WordImport\UnitedWordImportSource;
@@ -251,6 +256,11 @@ class WordController
             $deck->deckCards()->firstOrCreate(['hebrew_form_id' => $form->id]);
         }
 
+        if ($request->boolean('save_continue')) {
+            return redirect()->route('flashcards.words.create')
+                ->with('success', 'Word added.');
+        }
+
         return redirect()->route('flashcards.words.index')
             ->with('success', 'Word added.');
     }
@@ -335,10 +345,15 @@ class WordController
         $sourceKey = $request->query('source');
 
         if ($word === '') {
-            return response()->json(['error' => 'Word is required'], 400, [], JSON_UNESCAPED_UNICODE);
+            return response()->json([
+                'error' => 'Word is required',
+                'code' => 'WORD_REQUIRED',
+                'source' => $sourceKey,
+            ], 400, [], JSON_UNESCAPED_UNICODE);
         }
 
         $sources = [
+            'db' => app(DBWordImportSource::class),
             'gemini' => app(GeminiWordImportSource::class),
             'openai' => app(OpenAiWordImportSource::class),
             'united' => app(UnitedWordImportSource::class),
@@ -346,14 +361,70 @@ class WordController
 
         $source = $sources[$sourceKey] ?? null;
         if (! $source) {
-            return response()->json(['error' => 'No import source configured'], 400, [], JSON_UNESCAPED_UNICODE);
+            return response()->json([
+                'error' => 'No import source configured',
+                'code' => 'UNKNOWN_SOURCE',
+                'source' => $sourceKey,
+            ], 400, [], JSON_UNESCAPED_UNICODE);
         }
 
         $data = $source->fetch($word);
         if ($data === null) {
-            return response()->json(['error' => 'No data found'], 404, [], JSON_UNESCAPED_UNICODE);
+            $isDb = $sourceKey === 'db';
+
+            return response()->json([
+                'error' => $isDb
+                    ? 'No word saved with this exact form.'
+                    : 'No data found.',
+                'code' => $isDb ? 'WORD_NOT_IN_DATABASE' : 'IMPORT_EMPTY',
+                'source' => $sourceKey,
+            ], 404, [], JSON_UNESCAPED_UNICODE);
         }
 
         return response()->json($data, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function importExtraSense(ImportExtraSenseRequest $request)
+    {
+        $formText = trim((string) $request->input('form_text'));
+        $sourceKey = (string) $request->input('source');
+        /** @var array<int, string|null> $existing */
+        $existing = $request->input('existing_translations', []);
+
+        $sources = [
+            'db' => app(DatabaseExtraSenseSource::class),
+            'gemini' => app(GeminiExtraSenseSource::class),
+            'openai' => app(OpenAiExtraSenseSource::class),
+        ];
+
+        $source = $sources[$sourceKey] ?? null;
+        if (! $source) {
+            return response()->json([
+                'error' => 'No import source configured',
+                'code' => 'UNKNOWN_SOURCE',
+                'source' => $sourceKey,
+            ], 400, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($sourceKey === 'db' && ! HebrewForm::where('form_text', $formText)->exists()) {
+            return response()->json([
+                'error' => 'No word saved with this exact form.',
+                'code' => 'WORD_NOT_IN_DATABASE',
+                'source' => $sourceKey,
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $entry = $source->fetchOne($formText, $existing);
+        if ($entry === null) {
+            return response()->json([
+                'error' => $sourceKey === 'db'
+                    ? 'No additional sense in the database for this form.'
+                    : 'No additional sense found.',
+                'code' => $sourceKey === 'db' ? 'NO_EXTRA_DB_SENSE' : 'NO_EXTRA_SENSE',
+                'source' => $sourceKey,
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        return response()->json(['entry' => $entry], 200, [], JSON_UNESCAPED_UNICODE);
     }
 }

@@ -1,10 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Features\Auth\Controllers\LoginController;
 use App\Features\Auth\Controllers\LogoutController;
-use App\Features\Auth\Controllers\RegisterController;
-use App\Features\Auth\Controllers\SocialAuthController;
+use App\Features\Auth\Controllers\Default\LoginController;
+use App\Features\Auth\Controllers\Default\RegisterController;
+use App\Features\Auth\Controllers\Default\SocialAuthController;
 use App\Features\Flashcards\Http\Controllers\DashboardController;
 use App\Features\Flashcards\Http\Controllers\WordController;
 use App\Features\Flashcards\Http\Controllers\DeckController;
@@ -40,6 +40,7 @@ Route::middleware('auth')->prefix('dashboard')->name('flashcards.')->group(funct
     Route::post('/words/bulk', [WordController::class, 'bulkQueue'])->name('words.bulk-queue');
     Route::get('/words/process-pending', [WordController::class, 'processPendingWords'])->name('words.process-pending');
     Route::get('/words/import', [WordController::class, 'import'])->name('words.import');
+    Route::post('/words/import-extra-sense', [WordController::class, 'importExtraSense'])->name('words.import-extra-sense');
     Route::post('/words', [WordController::class, 'store'])->name('words.store');
     Route::get('/words/{hebrewForm}/edit', [WordController::class, 'edit'])->name('words.edit');
     Route::put('/words/{hebrewForm}', [WordController::class, 'update'])->name('words.update');

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Features\Auth\Controllers;
+namespace App\Features\Auth\Controllers\Default;
 
 use App\Features\Auth\Models\User;
 use App\Helpers\TenancyHelper;
@@ -10,17 +10,11 @@ use Illuminate\Support\Facades\Hash;
 
 class RegisterController
 {
-    /**
-     * Show registration form
-     */
     public function showRegistrationForm()
     {
         return TenancyHelper::view('register');
     }
 
-    /**
-     * Handle registration request
-     */
     public function register(Request $request)
     {
         $validated = $request->validate([

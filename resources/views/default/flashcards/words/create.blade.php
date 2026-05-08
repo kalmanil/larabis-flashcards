@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-    @include('default.partials.nav')
+    @include(\App\Helpers\TenancyHelper::getViewPath('partials.nav'))
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div class="max-w-2xl mx-auto">
@@ -25,7 +25,7 @@
                     <div class="mb-6 p-4 bg-green-50 border border-green-200 text-green-800 rounded-xl text-sm">{{ session('success') }}</div>
                 @endif
 
-                @include('default.flashcards.words.partials.word-form', ['theme' => 'default'])
+                @include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form'), ['theme' => 'default'])
             </div>
         </div>
     </div>

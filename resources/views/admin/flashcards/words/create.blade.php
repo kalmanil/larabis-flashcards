@@ -16,6 +16,6 @@
         </div>
     @endif
 
-    @include('default.flashcards.words.partials.word-form', ['theme' => 'admin'])
+    @include(\App\Helpers\TenancyHelper::getViewPathForCode('default', 'flashcards.words.partials.word-form'), ['theme' => 'admin'])
 </div>
 @endsection

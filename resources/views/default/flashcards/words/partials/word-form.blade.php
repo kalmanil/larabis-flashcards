@@ -5,12 +5,12 @@
 <form action="{{ route('flashcards.words.store') }}" method="POST" class="{{ $wordFormSpacing }}">
     @csrf
 
-    @include('default.flashcards.words.partials.word-form-fields', [
+    @include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form-fields'), [
         'word' => null,
         'formTextReadonly' => false,
     ])
 
-    @include('default.flashcards.words.partials.word-form-add-to-deck')
+    @include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form-add-to-deck'))
 
     <div class="flex flex-wrap gap-3 pt-2">
         <button type="submit" name="save_continue" value="1" class="{{ $wordFormBtnSubmit }}">Save and continue</button>
@@ -19,4 +19,4 @@
     </div>
 </form>
 
-@include('default.flashcards.words.partials.word-form-scripts')
+@include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form-scripts'))

@@ -79,7 +79,7 @@
                 <div id="entries-container" class="space-y-3">
                     @if (is_array($oldEntries))
                         @foreach ($oldEntries as $idx => $entry)
-                            @include('admin.flashcards.words.partials.word-form-sense-row', [
+                            @include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form-sense-row'), [
                                 'idx' => $idx,
                                 'translationRu' => $entry['translation_ru'] ?? '',
                                 'formType' => $entry['form_type'] ?? '',
@@ -88,7 +88,7 @@
                         @endforeach
                     @elseif($word->translations && $word->translations->count())
                         @foreach ($word->translations as $idx => $t)
-                            @include('admin.flashcards.words.partials.word-form-sense-row', [
+                        @include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form-sense-row'), [
                                 'idx' => $idx,
                                 'translationRu' => $t->text,
                                 'formType' => $t->pivot->form_type ?? '',
@@ -96,7 +96,7 @@
                             ])
                         @endforeach
                     @else
-                        @include('admin.flashcards.words.partials.word-form-sense-row', [
+                        @include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form-sense-row'), [
                             'idx' => 0,
                             'translationRu' => '',
                             'formType' => '',
@@ -107,7 +107,7 @@
             </div>
         </div>
 
-        @include('default.flashcards.words.partials.word-form-add-to-deck')
+        @include(\App\Helpers\TenancyHelper::getViewPathForCode('default', 'flashcards.words.partials.word-form-add-to-deck'))
 
         <div class="flex flex-wrap gap-3">
             <button type="submit" name="enrichment_flow" value="1" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save and continue</button>

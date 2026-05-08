@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-    @include('default.partials.nav')
+    @include(\App\Helpers\TenancyHelper::getViewPath('partials.nav'))
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div class="max-w-2xl mx-auto">
@@ -38,12 +38,12 @@
                     @csrf
                     @method('PUT')
 
-                    @include('default.flashcards.words.partials.word-form-fields', [
+                    @include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form-fields'), [
                         'word' => $word,
                         'formTextReadonly' => true,
                     ])
 
-                    @include('default.flashcards.words.partials.word-form-add-to-deck')
+                    @include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form-add-to-deck'))
 
                     <div class="flex flex-wrap gap-3 pt-2">
                         <button type="submit" name="enrichment_flow" value="1" class="{{ $wordFormBtnSubmit }}">Save and continue</button>
@@ -55,5 +55,5 @@
         </div>
     </div>
 </div>
-@include('default.flashcards.words.partials.word-form-scripts')
+@include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form-scripts'))
 @endsection

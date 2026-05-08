@@ -52,4 +52,5 @@ auth.json
 
 # Cursor rules
 .cursorrules
+.cursorindexingignore
 .specstory/

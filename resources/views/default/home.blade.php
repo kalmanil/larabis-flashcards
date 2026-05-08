@@ -100,6 +100,23 @@
                 </div>
             </div>
 
+            <!-- Visitor Geo Card -->
+            @if(isset($visitorGeo))
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Visitor Location</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center pb-2 border-b border-gray-100">
+                        <span class="text-sm text-gray-600">IP:</span>
+                        <span class="font-mono text-xs text-gray-700">{{ $visitorGeo['ip'] ?? 'Unknown' }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Country:</span>
+                        <span class="font-semibold text-indigo-600">{{ $visitorGeo['country'] ?? 'Unknown' }}</span>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <!-- Quick Stats Card -->
             <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                 <h3 class="text-lg font-semibold mb-4">Quick Stats</h3>

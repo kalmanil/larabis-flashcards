@@ -16,9 +16,11 @@
         </div>
     @endif
 
-    @include(\App\Helpers\TenancyHelper::getViewPathForCode('default', 'flashcards.words.partials.word-form'), [
+    @php
+        extract(app(\App\Features\Flashcards\View\Services\WordFormThemeFactory::class)->variables('admin'));
+    @endphp
+    @include(\App\Helpers\TenancyHelper::getViewPathForCode('default', 'flashcards.words.partials.word-form-ru'), [
         'theme' => 'admin',
-        'wordFormInputMode' => 'russian',
     ])
 </div>
 @endsection

@@ -5,6 +5,7 @@ namespace App\Features\Flashcards\Http\Controllers;
 use App\Features\Flashcards\Http\Requests\BulkQueueHebrewWordsRequest;
 use App\Features\Flashcards\Http\Requests\ImportExtraSenseRequest;
 use App\Features\Flashcards\Http\Requests\StoreHebrewFormRequest;
+use App\Features\Flashcards\Http\Requests\StoreHebrewFormsFromRussianRequest;
 use App\Features\Flashcards\Http\Requests\UpdateHebrewFormRequest;
 use App\Features\Flashcards\Models\HebrewForm;
 use App\Features\Flashcards\Models\Language;
@@ -158,6 +159,113 @@ class WordController
     public function createFromRussian()
     {
         return TenancyHelper::view('flashcards.words.create-ru');
+    }
+
+    public function storeFromRussian(StoreHebrewFormsFromRussianRequest $request)
+    {
+        $gloss = trim((string) $request->input('russian_gloss'));
+        $created = 0;
+        $translationsAdded = 0;
+        $skipped = 0;
+        $deck = null;
+
+        foreach ($request->nonEmptyHebrewRows() as $row) {
+            $formText = trim((string) ($row['form_text'] ?? ''));
+            $existing = HebrewForm::query()->where('form_text', $formText)->first();
+
+            if ($existing !== null) {
+                if (! $this->attachRussianGlossIfMissing($existing, $gloss, $row['form_type'] ?? null)) {
+                    $skipped++;
+
+                    continue;
+                }
+                $translationsAdded++;
+                $form = $existing;
+            } else {
+                $shoreshId = null;
+                $rootRaw = trim((string) ($row['shoresh_root'] ?? ''));
+                $root = ShoreshRootNormalizer::normalize($rootRaw !== '' ? $rootRaw : null) ?? '';
+                if ($root !== '') {
+                    $shoresh = Shoresh::firstOrCreate(['root' => $root]);
+                    $shoreshId = $shoresh->id;
+                }
+
+                $form = HebrewForm::create([
+                    'shoresh_id' => $shoreshId,
+                    'form_text' => $formText,
+                    'transcription_ru' => TranscriptionRuNormalizer::normalize($row['transcription_ru'] ?? null),
+                    'frequency_rank' => $row['frequency_rank'] ?? null,
+                    'frequency_per_million' => $row['frequency_per_million'] ?? null,
+                ]);
+                $this->attachRussianGlossIfMissing($form, $gloss, $row['form_type'] ?? null);
+                $created++;
+            }
+
+            if (($row['add_to_deck'] ?? '0') == '1') {
+                $deck = $deck ?? $this->ensureDefaultDeck();
+                $deck->deckCards()->firstOrCreate(['hebrew_form_id' => $form->id]);
+            }
+        }
+
+        $parts = [];
+        if ($created > 0) {
+            $parts[] = $created.' created';
+        }
+        if ($translationsAdded > 0) {
+            $parts[] = $translationsAdded.' translation'.($translationsAdded === 1 ? '' : 's').' added';
+        }
+        if ($skipped > 0) {
+            $parts[] = $skipped.' skipped (already linked)';
+        }
+        $msg = $parts === [] ? 'Nothing to save.' : 'Saved: '.implode(', ', $parts).'.';
+
+        if ($request->boolean('save_continue')) {
+            return redirect()->route('flashcards.words.create-ru')
+                ->with('success', $msg);
+        }
+
+        return redirect()->route('flashcards.words.index')
+            ->with('success', $msg);
+    }
+
+    /**
+     * Attach Russian gloss to a Hebrew form if not already linked. Does not alter other translations.
+     */
+    protected function attachRussianGlossIfMissing(HebrewForm $form, string $gloss, mixed $formTypeRaw = null): bool
+    {
+        $lang = Language::where('code', 'ru')->first();
+        if ($lang === null) {
+            return false;
+        }
+
+        $gloss = trim($gloss);
+        if ($gloss === '') {
+            return false;
+        }
+
+        $translation = Translation::firstOrCreate(
+            ['language_id' => $lang->id, 'text' => $gloss],
+            ['language_id' => $lang->id, 'text' => $gloss]
+        );
+
+        if ($form->translations()->where('translations.id', $translation->id)->exists()) {
+            return false;
+        }
+
+        $formType = null;
+        if (is_string($formTypeRaw) && trim($formTypeRaw) !== '') {
+            $formType = FormTypeCatalog::canonical(trim($formTypeRaw));
+        }
+
+        $maxOrder = (int) $form->translations()->max('hebrew_form_translation.sense_order');
+
+        $form->translations()->attach($translation->id, [
+            'form_type' => $formType,
+            'sense_order' => $maxOrder + 1,
+            'transcription_ru' => null,
+        ]);
+
+        return true;
     }
 
     public function bulkCreate()

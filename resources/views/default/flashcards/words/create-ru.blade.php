@@ -25,9 +25,8 @@
                     <div class="mb-6 p-4 bg-green-50 border border-green-200 text-green-800 rounded-xl text-sm">{{ session('success') }}</div>
                 @endif
 
-                @include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form'), [
+                @include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form-ru'), [
                     'theme' => 'default',
-                    'wordFormInputMode' => 'russian',
                 ])
             </div>
         </div>

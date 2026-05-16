@@ -46,7 +46,7 @@ final class FormTypeCatalog
         return 'You output only valid JSON (no markdown fences, no commentary).'
             ."\n\nSchema for Hebrew word analysis:\n"
             ."- transcription_ru: string. Practical Russian transliteration in Cyrillic (Russian Hebrew textbook style), not Latin/IPA. Optional lone lowercase h for voiceless glottal ה. Fully lowercase. Stress: Unicode combining acute U+0301 only, immediately after the stressed vowel (e.g. шало́м).\n"
-            .'- shoresh_root: string, 2–4 Hebrew letters, no ASCII hyphens in the value.'
+            .'- shoresh_root: string, 2–4 Hebrew letters only: one contiguous word of א–ת using medial letter shapes only (never final ךםןףץ—use כמנפת instead). No dots, hyphens, maqaf, spaces, digits, punctuation, niqqud, Latin, or other characters.'
             ."\n- frequency_rank: number (estimate ok if uncertain).\n"
             ."- frequency_per_million: number (estimate ok if uncertain).\n"
             ."- entries: array of senses. Each object must have translation_ru (string) plus factor fields below. Optional transcription_ru (per-sense) if pronunciation differs from top-level.\n\n"
@@ -54,6 +54,28 @@ final class FormTypeCatalog
             ."\n\nEach entry JSON must include pos_id and any modifiers required by that pos (see rules). Do not send form_type, form_type_id, or merged labels.\n"
             .'Example entry shapes: {"translation_ru":"…","pos_id":2,"verb_binyan_id":5,"verb_shape_id":2} for hif\'il infinitive; add verb_shape_id 3 and verb_binyan_id 6 for huf\'al past (3ms).'
             ."\n\nReturn one translation_ru per sense. JSON only.";
+    }
+
+    /**
+     * Russian gloss → one or more Hebrew lemmas (Gemini systemInstruction / OpenAI instructions).
+     */
+    public static function russianWordImportSystemInstruction(): string
+    {
+        $factors = FormTypeComposer::promptFactorTables();
+
+        return 'You output only valid JSON (no markdown fences, no commentary).'
+            ."\n\nThe user gives a Russian word or phrase (the target gloss). Propose every distinct Modern Hebrew lexical form that can gloss that Russian as a headword or fixed expression sense."
+            ."\n\nReturn exactly one object: { \"candidates\": [ ... ] }."
+            ."\nEach candidate is one Hebrew lemma with:\n"
+            ."- form_text: string, the Hebrew surface form (unvocalized as typically typed).\n"
+            ."- transcription_ru: string. Practical Russian transliteration in Cyrillic for that lemma. Optional lone lowercase h for voiceless glottal ה. Stress U+0301 after the stressed vowel.\n"
+            .'- shoresh_root: same rules as Hebrew word import — 2–4 Hebrew letters only, medial (non-sofit) forms, no dots or separators.'
+            ."\n- frequency_rank: number (estimate per lemma if uncertain).\n"
+            ."- frequency_per_million: number (estimate per lemma if uncertain).\n"
+            ."- entries: senses for that Hebrew form. Each object must have translation_ru (include the user's Russian when it fits, plus other Russian glosses as separate senses as needed) plus factor fields below. Optional transcription_ru per sense.\n\n"
+            .$factors
+            ."\n\nEach entry JSON must include pos_id and any modifiers required by that pos. Do not send form_type or form_type_id. If multiple Hebrew words share the same Russian translation, output multiple candidates with different form_text and different frequency estimates when they differ."
+            ."\n\nJSON only.";
     }
 
     /**

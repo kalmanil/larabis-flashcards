@@ -36,4 +36,13 @@ interface WordImportSourceInterface
      * Missing keys can be omitted.
      */
     public function fetch(string $hebrewFormText): ?array;
+
+    /**
+     * Russian gloss lookup: zero or more Hebrew lemmas, each with the same detail shape as
+     * {@see fetch()} plus a required form_text per item, wrapped as:
+     * [ 'candidates' => [ ... ], ] or null if nothing found.
+     *
+     * @return array{candidates: list<array<string, mixed>>}|null
+     */
+    public function fetchFromRussian(string $russianText): ?array;
 }

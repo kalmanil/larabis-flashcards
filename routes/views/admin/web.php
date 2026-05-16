@@ -39,6 +39,7 @@ Route::middleware('auth')->prefix('dashboard')->name('flashcards.')->group(funct
 
     Route::get('/words', [WordController::class, 'index'])->name('words.index');
     Route::get('/words/create', [WordController::class, 'create'])->name('words.create');
+    Route::get('/words/create-ru', [WordController::class, 'createFromRussian'])->name('words.create-ru');
     Route::get('/words/bulk', [WordController::class, 'bulkCreate'])->name('words.bulk-create');
     Route::post('/words/bulk', [WordController::class, 'bulkQueue'])->name('words.bulk-queue');
     Route::get('/words/process-pending', [WordController::class, 'processPendingWords'])->name('words.process-pending');

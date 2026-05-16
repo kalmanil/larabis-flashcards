@@ -31,6 +31,8 @@
                 <span class="text-gray-300" aria-hidden="true">|</span>
                 <a href="{{ route('flashcards.words.create') }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">Add word</a>
                 <span class="text-gray-300" aria-hidden="true">|</span>
+                <a href="{{ route('flashcards.words.create-ru') }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">Добавить слово</a>
+                <span class="text-gray-300" aria-hidden="true">|</span>
                 <a href="{{ route('flashcards.decks.index') }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">Decks</a>
             </div>
         </nav>
@@ -44,6 +46,11 @@
             <a href="{{ route('flashcards.words.create') }}"
                class="block w-full p-6 bg-white hover:bg-gray-50 border-2 border-gray-200 rounded-xl shadow text-center font-semibold text-lg transition-colors">
                 Add words
+            </a>
+
+            <a href="{{ route('flashcards.words.create-ru') }}"
+               class="block w-full p-6 bg-white hover:bg-gray-50 border-2 border-gray-200 rounded-xl shadow text-center font-semibold text-lg transition-colors">
+                Добавить слово
             </a>
 
             <a href="{{ route('flashcards.words.bulk-create') }}"

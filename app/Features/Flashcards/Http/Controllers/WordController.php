@@ -11,15 +11,16 @@ use App\Features\Flashcards\Models\Language;
 use App\Features\Flashcards\Models\Shoresh;
 use App\Features\Flashcards\Models\Translation;
 use App\Features\Flashcards\Services\BulkWordLineParser;
-use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
 use App\Features\Flashcards\Services\SenseImport\DatabaseExtraSenseSource;
 use App\Features\Flashcards\Services\SenseImport\GeminiExtraSenseSource;
 use App\Features\Flashcards\Services\SenseImport\OpenAiExtraSenseSource;
+use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
 use App\Features\Flashcards\Services\WordImport\DBWordImportSource;
 use App\Features\Flashcards\Services\WordImport\GeminiWordImportSource;
 use App\Features\Flashcards\Services\WordImport\OpenAiWordImportSource;
 use App\Features\Flashcards\Services\WordImport\UnitedWordImportSource;
 use App\Features\Flashcards\Support\FormTypeCatalog;
+use App\Features\Flashcards\Support\ShoreshRootNormalizer;
 use App\Helpers\TenancyHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -154,6 +155,11 @@ class WordController
         return TenancyHelper::view('flashcards.words.create');
     }
 
+    public function createFromRussian()
+    {
+        return TenancyHelper::view('flashcards.words.create-ru');
+    }
+
     public function bulkCreate()
     {
         return TenancyHelper::view('flashcards.words.bulk-create');
@@ -235,7 +241,8 @@ class WordController
     public function store(StoreHebrewFormRequest $request)
     {
         $shoreshId = null;
-        $root = trim((string) $request->input('shoresh_root', ''));
+        $rootRaw = trim((string) $request->input('shoresh_root', ''));
+        $root = ShoreshRootNormalizer::normalize($rootRaw !== '' ? $rootRaw : null) ?? '';
         if ($root !== '') {
             $shoresh = Shoresh::firstOrCreate(['root' => $root]);
             $shoreshId = $shoresh->id;
@@ -285,7 +292,8 @@ class WordController
     public function update(UpdateHebrewFormRequest $request, HebrewForm $hebrewForm)
     {
         $shoreshId = null;
-        $root = trim((string) $request->input('shoresh_root', ''));
+        $rootRaw = trim((string) $request->input('shoresh_root', ''));
+        $root = ShoreshRootNormalizer::normalize($rootRaw !== '' ? $rootRaw : null) ?? '';
         if ($root !== '') {
             $shoresh = Shoresh::firstOrCreate(['root' => $root]);
             $shoreshId = $shoresh->id;
@@ -345,6 +353,7 @@ class WordController
     {
         $word = trim((string) $request->query('word'));
         $sourceKey = $request->query('source');
+        $fromRussian = $request->boolean('from_russian');
 
         if ($word === '') {
             return response()->json([
@@ -370,13 +379,17 @@ class WordController
             ], 400, [], JSON_UNESCAPED_UNICODE);
         }
 
-        $data = $source->fetch($word);
+        $data = $fromRussian
+            ? $source->fetchFromRussian($word)
+            : $source->fetch($word);
         if ($data === null) {
             $isDb = $sourceKey === 'db';
 
             return response()->json([
                 'error' => $isDb
-                    ? 'No word saved with this exact form.'
+                    ? ($fromRussian
+                        ? 'No Hebrew forms linked to this exact Russian gloss in the database.'
+                        : 'No word saved with this exact form.')
                     : 'No data found.',
                 'code' => $isDb ? 'WORD_NOT_IN_DATABASE' : 'IMPORT_EMPTY',
                 'source' => $sourceKey,

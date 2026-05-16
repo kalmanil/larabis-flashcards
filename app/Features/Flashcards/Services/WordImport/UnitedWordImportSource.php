@@ -4,6 +4,7 @@ namespace App\Features\Flashcards\Services\WordImport;
 
 use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
 use App\Features\Flashcards\Support\FormTypeCatalog;
+use App\Features\Flashcards\Support\ShoreshRootNormalizer;
 
 /**
  * Runs Gemini and OpenAI import, then merges into one payload (simple heuristics).
@@ -45,6 +46,110 @@ class UnitedWordImportSource implements WordImportSourceInterface
         return $this->merge($g, $o);
     }
 
+    public function fetchFromRussian(string $russianText): ?array
+    {
+        $g = $this->gemini->fetchFromRussian($russianText);
+        $o = $this->openai->fetchFromRussian($russianText);
+
+        if ($g === null && $o === null) {
+            return null;
+        }
+
+        if ($g === null) {
+            return $o;
+        }
+
+        if ($o === null) {
+            return $g;
+        }
+
+        return $this->mergeRussian($g, $o);
+    }
+
+    /**
+     * @param  array<string, mixed>  $gemini
+     * @param  array<string, mixed>  $openai
+     * @return array<string, mixed>
+     */
+    private function mergeRussian(array $gemini, array $openai): array
+    {
+        $gList = isset($gemini['candidates']) && is_array($gemini['candidates']) ? $gemini['candidates'] : [];
+        $oList = isset($openai['candidates']) && is_array($openai['candidates']) ? $openai['candidates'] : [];
+
+        /** @var array<string, array{g?: array<string, mixed>, o?: array<string, mixed>}> $slots */
+        $slots = [];
+        /** @var list<string> $order */
+        $order = [];
+
+        foreach ($gList as $c) {
+            if (! is_array($c)) {
+                continue;
+            }
+            $ft = isset($c['form_text']) ? trim((string) $c['form_text']) : '';
+            if ($ft === '') {
+                continue;
+            }
+            if (! isset($slots[$ft])) {
+                $order[] = $ft;
+                $slots[$ft] = [];
+            }
+            $slots[$ft]['g'] = $c;
+        }
+
+        foreach ($oList as $c) {
+            if (! is_array($c)) {
+                continue;
+            }
+            $ft = isset($c['form_text']) ? trim((string) $c['form_text']) : '';
+            if ($ft === '') {
+                continue;
+            }
+            if (! isset($slots[$ft])) {
+                $order[] = $ft;
+                $slots[$ft] = [];
+            }
+            $slots[$ft]['o'] = $c;
+        }
+
+        $out = [];
+        foreach ($order as $ft) {
+            $pair = $slots[$ft] ?? [];
+            $gc = $pair['g'] ?? null;
+            $oc = $pair['o'] ?? null;
+            if (is_array($gc) && is_array($oc)) {
+                $out[] = $this->mergeCandidatePair($gc, $oc);
+            } elseif (is_array($gc)) {
+                $out[] = $gc;
+            } elseif (is_array($oc)) {
+                $out[] = $oc;
+            }
+        }
+
+        return ['candidates' => $out];
+    }
+
+    /**
+     * @param  array<string, mixed>  $g
+     * @param  array<string, mixed>  $o
+     * @return array<string, mixed>
+     */
+    private function mergeCandidatePair(array $g, array $o): array
+    {
+        $formText = isset($g['form_text']) ? trim((string) $g['form_text']) : '';
+        if ($formText === '') {
+            $formText = isset($o['form_text']) ? trim((string) $o['form_text']) : '';
+        }
+
+        $gFlat = $g;
+        $oFlat = $o;
+        unset($gFlat['form_text'], $oFlat['form_text']);
+
+        $merged = $this->merge($gFlat, $oFlat);
+        $merged['form_text'] = $formText;
+
+        return $merged;
+    }
+
     /**
      * @param  array<string, mixed>  $gemini
      * @param  array<string, mixed>  $openai
@@ -59,10 +164,18 @@ class UnitedWordImportSource implements WordImportSourceInterface
             $transcription = TranscriptionRuNormalizer::normalize($transcription);
         }
 
-        $shoresh = $this->pickShoresh(
-            isset($gemini['shoresh_root']) ? (string) $gemini['shoresh_root'] : '',
-            isset($openai['shoresh_root']) ? (string) $openai['shoresh_root'] : '',
-        );
+        $gSr = ShoreshRootNormalizer::normalize(
+            isset($gemini['shoresh_root']) && trim((string) $gemini['shoresh_root']) !== ''
+                ? (string) $gemini['shoresh_root']
+                : null
+        ) ?? '';
+        $oSr = ShoreshRootNormalizer::normalize(
+            isset($openai['shoresh_root']) && trim((string) $openai['shoresh_root']) !== ''
+                ? (string) $openai['shoresh_root']
+                : null
+        ) ?? '';
+
+        $shoresh = $this->pickShoresh($gSr, $oSr);
 
         $gEntries = isset($gemini['entries']) && is_array($gemini['entries']) ? $gemini['entries'] : [];
         $oEntries = isset($openai['entries']) && is_array($openai['entries']) ? $openai['entries'] : [];

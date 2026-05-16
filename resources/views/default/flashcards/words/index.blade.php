@@ -14,6 +14,10 @@
                    class="px-4 py-2 border border-gray-200 bg-white text-gray-800 rounded-xl font-medium hover:bg-gray-50 shadow-sm transition-all duration-200 text-center">
                     Bulk add
                 </a>
+                <a href="{{ route('flashcards.words.create-ru') }}"
+                   class="px-4 py-2 border border-gray-200 bg-white text-gray-800 rounded-xl font-medium hover:bg-gray-50 shadow-sm transition-all duration-200 text-center">
+                    Добавить слово
+                </a>
                 <a href="{{ route('flashcards.words.create') }}"
                    class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-medium hover:from-indigo-600 hover:to-purple-700 shadow-md hover:shadow-lg transition-all duration-200 text-center">
                     Add word

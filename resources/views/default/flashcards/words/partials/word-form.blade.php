@@ -8,6 +8,7 @@
     @include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form-fields'), [
         'word' => null,
         'formTextReadonly' => false,
+        'wordFormInputMode' => $wordFormInputMode ?? 'hebrew',
     ])
 
     @include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form-add-to-deck'))
@@ -19,4 +20,6 @@
     </div>
 </form>
 
-@include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form-scripts'))
+@include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form-scripts'), [
+    'wordFormInputMode' => $wordFormInputMode ?? 'hebrew',
+])

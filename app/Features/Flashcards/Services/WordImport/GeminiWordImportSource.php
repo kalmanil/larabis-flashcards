@@ -4,6 +4,7 @@ namespace App\Features\Flashcards\Services\WordImport;
 
 use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
 use App\Features\Flashcards\Support\FormTypeCatalog;
+use App\Features\Flashcards\Support\ShoreshRootNormalizer;
 use Illuminate\Support\Facades\Http;
 
 class GeminiWordImportSource implements WordImportSourceInterface
@@ -100,10 +101,68 @@ class GeminiWordImportSource implements WordImportSourceInterface
 
         return [
             'transcription_ru' => $transcriptionRu,
-            'shoresh_root' => isset($inner['shoresh_root']) ? (string) $inner['shoresh_root'] : null,
+            'shoresh_root' => ShoreshRootNormalizer::normalize(
+                isset($inner['shoresh_root']) && trim((string) $inner['shoresh_root']) !== ''
+                    ? (string) $inner['shoresh_root']
+                    : null
+            ),
             'frequency_rank' => $frequencyRank !== null ? (float) $frequencyRank : null,
             'frequency_per_million' => $frequencyPerMillion !== null ? (float) $frequencyPerMillion : null,
             'entries' => $entries,
         ];
+    }
+
+    public function fetchFromRussian(string $russianText): ?array
+    {
+        $apiKey = (string) config('services.gemini.key', env('GEMINI_API_KEY'));
+
+        if ($apiKey === '') {
+            return null;
+        }
+
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='.urlencode($apiKey);
+
+        $userText = 'Russian word or phrase to map to Hebrew: '.trim($russianText);
+
+        $payload = [
+            'systemInstruction' => [
+                'parts' => [
+                    ['text' => FormTypeCatalog::russianWordImportSystemInstruction()],
+                ],
+            ],
+            'contents' => [
+                [
+                    'role' => 'user',
+                    'parts' => [
+                        ['text' => $userText],
+                    ],
+                ],
+            ],
+            'generationConfig' => [
+                'responseMimeType' => 'application/json',
+            ],
+        ];
+
+        $response = Http::withoutVerifying()
+            ->withHeaders(['Content-Type' => 'application/json'])
+            ->post($url, $payload);
+
+        if (! $response->ok()) {
+            return null;
+        }
+
+        $outer = $response->json();
+        $text = $outer['candidates'][0]['content']['parts'][0]['text'] ?? null;
+
+        if (! is_string($text) || trim($text) === '') {
+            return null;
+        }
+
+        $inner = json_decode($text, true);
+        if (! is_array($inner)) {
+            return null;
+        }
+
+        return RussianWordImportNormalizer::fromLlmArray($inner);
     }
 }

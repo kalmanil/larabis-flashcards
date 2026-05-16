@@ -3,7 +3,10 @@
 namespace App\Features\Flashcards\Services\WordImport;
 
 use App\Features\Flashcards\Models\HebrewForm;
+use App\Features\Flashcards\Models\Language;
+use App\Features\Flashcards\Models\Translation;
 use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
+use App\Features\Flashcards\Support\ShoreshRootNormalizer;
 
 class DBWordImportSource implements WordImportSourceInterface
 {
@@ -35,6 +38,59 @@ class DBWordImportSource implements WordImportSourceInterface
             return null;
         }
 
+        return $this->hebrewImportPayloadWithoutFormText($this->candidateFromHebrewForm($form));
+    }
+
+    public function fetchFromRussian(string $russianText): ?array
+    {
+        $lang = Language::query()->where('code', 'ru')->first();
+        if ($lang === null) {
+            return null;
+        }
+
+        $term = trim($russianText);
+        if ($term === '') {
+            return null;
+        }
+
+        $translation = Translation::query()
+            ->where('language_id', $lang->id)
+            ->where('text', $term)
+            ->first();
+
+        if ($translation === null) {
+            return null;
+        }
+
+        $forms = $translation->hebrewForms()
+            ->with([
+                'shoresh',
+                'translations' => function ($q) {
+                    $q->whereHas('language', function ($l) {
+                        $l->where('code', 'ru');
+                    })->orderByPivot('sense_order');
+                },
+            ])
+            ->orderBy('form_text')
+            ->get();
+
+        if ($forms->isEmpty()) {
+            return null;
+        }
+
+        $candidates = [];
+        foreach ($forms as $form) {
+            $candidates[] = $this->candidateFromHebrewForm($form);
+        }
+
+        return ['candidates' => $candidates];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function candidateFromHebrewForm(HebrewForm $form): array
+    {
         $entries = [];
         foreach ($form->translations as $t) {
             $text = trim((string) $t->text);
@@ -62,15 +118,28 @@ class DBWordImportSource implements WordImportSourceInterface
         }
 
         $shoreshRoot = $form->shoresh !== null ? trim((string) $form->shoresh->root) : '';
+        $shoreshRootNorm = ShoreshRootNormalizer::normalize($shoreshRoot !== '' ? $shoreshRoot : null);
         $frequencyRank = $form->frequency_rank;
         $frequencyPerMillion = $form->frequency_per_million;
 
         return [
+            'form_text' => (string) $form->form_text,
             'transcription_ru' => $transcriptionRu,
-            'shoresh_root' => $shoreshRoot !== '' ? $shoreshRoot : null,
+            'shoresh_root' => $shoreshRootNorm,
             'frequency_rank' => $frequencyRank !== null ? (float) $frequencyRank : null,
             'frequency_per_million' => $frequencyPerMillion !== null ? (float) $frequencyPerMillion : null,
             'entries' => $entries,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $candidate
+     * @return array<string, mixed>
+     */
+    private function hebrewImportPayloadWithoutFormText(array $candidate): array
+    {
+        unset($candidate['form_text']);
+
+        return $candidate;
     }
 }

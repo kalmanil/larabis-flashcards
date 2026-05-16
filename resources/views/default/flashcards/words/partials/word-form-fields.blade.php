@@ -2,30 +2,66 @@
 @php
     $word = $word ?? null;
     $formTextReadonly = $formTextReadonly ?? false;
+    $wordFormInputMode = $wordFormInputMode ?? 'hebrew';
     $dbImportLabel = 'D';
     $geminiImportLabel = 'G';
     $formTextClass = trim('flex-1 ' . $inputClassLg . ($formTextReadonly ? ' bg-gray-50' : ''));
 @endphp
 
+@if ($wordFormInputMode === 'russian')
+    <div>
+        <label class="block font-medium text-gray-700 mb-1">Russian word <span class="text-red-600">*</span></label>
+        <p class="text-xs text-gray-500 mb-1">Type the Russian gloss, then use D/G to import Hebrew and details.</p>
+        <div class="flex gap-2">
+            <input type="text" id="russian_word"
+                   class="flex-1 {{ $inputClassLg }}"
+                   dir="ltr"
+                   lang="ru"
+                   autocomplete="off">
+            <button type="button"
+                    id="db-import-btn"
+                    title="Temporary: import from database (exact Russian translation match)"
+                    class="{{ $btnPrimary }} disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none">
+                {{ $dbImportLabel }}
+            </button>
+            <button type="button"
+                    id="gemini-import-btn"
+                    class="{{ $btnPrimary }} disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none">
+                {{ $geminiImportLabel }}
+            </button>
+        </div>
+    </div>
+
+    <div id="russian-candidate-panel" class="hidden mb-4 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+            <span class="text-sm font-medium text-gray-700">Hebrew match</span>
+            <select id="hebrew_candidate_pick" class="hidden w-full sm:w-auto sm:max-w-xs {{ $inputClass }}" aria-label="Choose Hebrew form"></select>
+        </div>
+        <div id="russian_frequency_summary" class="text-sm text-gray-700 space-y-1"></div>
+    </div>
+@endif
+
 <div>
-    <label class="block font-medium text-gray-700 mb-1">Hebrew form *</label>
+    <label class="block font-medium text-gray-700 mb-1">Hebrew form <span class="text-red-600">*</span></label>
     <div class="flex gap-2">
         <input type="text" name="form_text" id="form_text"
                value="{{ old('form_text', $word?->form_text) }}"
                required dir="rtl"
                @if($formTextReadonly) readonly @endif
                class="{{ $formTextClass }}">
-        <button type="button"
-                id="db-import-btn"
-                title="Temporary: import from database (exact form_text match)"
-                class="{{ $btnPrimary }} disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none">
-            {{ $dbImportLabel }}
-        </button>
-        <button type="button"
-                id="gemini-import-btn"
-                class="{{ $btnPrimary }} disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none">
-            {{ $geminiImportLabel }}
-        </button>
+        @if ($wordFormInputMode === 'hebrew')
+            <button type="button"
+                    id="db-import-btn"
+                    title="Temporary: import from database (exact form_text match)"
+                    class="{{ $btnPrimary }} disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none">
+                {{ $dbImportLabel }}
+            </button>
+            <button type="button"
+                    id="gemini-import-btn"
+                    class="{{ $btnPrimary }} disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none">
+                {{ $geminiImportLabel }}
+            </button>
+        @endif
     </div>
 </div>
 

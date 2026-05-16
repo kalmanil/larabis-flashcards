@@ -1,6 +1,12 @@
 {{-- Requires WordFormThemeFactory::variables() extract() earlier in the same view (sets $wordFormInputBorderJs, $btnStressSmall). --}}
+@php
+    $wordFormInputMode = $wordFormInputMode ?? 'hebrew';
+@endphp
 <script>
     (function () {
+        const inputMode = @json($wordFormInputMode);
+        let lastRussianCandidates = [];
+
         const container = document.getElementById('entries-container');
         const addBtn = document.getElementById('add-entry-row');
         const importSpecs = [
@@ -196,7 +202,138 @@
             }
         }
 
+        function escapeHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        function clearRussianCandidateUI() {
+            lastRussianCandidates = [];
+            const panel = document.getElementById('russian-candidate-panel');
+            const pick = document.getElementById('hebrew_candidate_pick');
+            const sum = document.getElementById('russian_frequency_summary');
+            if (panel) {
+                panel.classList.add('hidden');
+            }
+            if (pick) {
+                pick.classList.add('hidden');
+                pick.innerHTML = '';
+            }
+            if (sum) {
+                sum.innerHTML = '';
+            }
+        }
+
+        function applyFlatWordImportData(data) {
+            const transcription = document.getElementById('transcription_ru');
+            const shoreshEl = document.getElementById('shoresh_root');
+            const freqRank = document.getElementById('frequency_rank');
+            const freqPerM = document.getElementById('frequency_per_million');
+
+            if (transcription) {
+                transcription.value = (data.transcription_ru != null && String(data.transcription_ru).trim() !== '')
+                    ? data.transcription_ru
+                    : '';
+            }
+            if (shoreshEl) {
+                shoreshEl.value = (data.shoresh_root != null && String(data.shoresh_root).trim() !== '')
+                    ? data.shoresh_root
+                    : '';
+            }
+            if (freqRank) {
+                if (data.frequency_rank !== null && typeof data.frequency_rank !== 'undefined') {
+                    freqRank.value = data.frequency_rank;
+                } else {
+                    clearNumberInput(freqRank);
+                }
+            }
+            if (freqPerM) {
+                if (data.frequency_per_million !== null && typeof data.frequency_per_million !== 'undefined') {
+                    freqPerM.value = data.frequency_per_million;
+                } else {
+                    clearNumberInput(freqPerM);
+                }
+            }
+
+            const entries = Array.isArray(data.entries) ? data.entries : [];
+
+            const entriesContainer = document.getElementById('entries-container');
+            if (!entriesContainer) {
+                console.error('[flashcards.wordImport] #entries-container not found');
+                return;
+            }
+            entriesContainer.innerHTML = '';
+            index = 0;
+            entries.forEach(function (entry) {
+                const row = createEntryRow(
+                    index,
+                    entry.translation_ru || '',
+                    entry.form_type || '',
+                    entry.transcription_ru || ''
+                );
+                entriesContainer.appendChild(row);
+                setupDelete(row);
+                index++;
+            });
+
+            if (index === 0) {
+                const row = createEntryRow(0, '', '', '');
+                entriesContainer.appendChild(row);
+                setupDelete(row);
+                index = 1;
+            }
+        }
+
+        function applyCandidateWordImportData(c) {
+            const formTextEl = document.getElementById('form_text');
+            if (formTextEl && c.form_text != null && String(c.form_text).trim() !== '') {
+                formTextEl.value = String(c.form_text);
+            }
+            applyFlatWordImportData(c);
+        }
+
+        function showRussianCandidatesPanel(candidates) {
+            const panel = document.getElementById('russian-candidate-panel');
+            const pick = document.getElementById('hebrew_candidate_pick');
+            const sum = document.getElementById('russian_frequency_summary');
+            if (!panel || !sum) {
+                return;
+            }
+            panel.classList.remove('hidden');
+            let html = '<p class="font-medium text-gray-800">Frequency by Hebrew form (same Russian gloss)</p><ul class="list-disc list-inside mt-1">';
+            candidates.forEach(function (c) {
+                const ft = (c.form_text != null) ? String(c.form_text) : '';
+                const r = (c.frequency_rank !== null && typeof c.frequency_rank !== 'undefined') ? c.frequency_rank : '—';
+                const m = (c.frequency_per_million !== null && typeof c.frequency_per_million !== 'undefined') ? c.frequency_per_million : '—';
+                html += '<li><span dir="rtl" class="font-medium">' + escapeHtml(ft) + '</span>: rank ' + escapeHtml(String(r)) + ', per million ' + escapeHtml(String(m)) + '</li>';
+            });
+            html += '</ul>';
+            sum.innerHTML = html;
+            if (pick && candidates.length > 1) {
+                pick.classList.remove('hidden');
+                pick.innerHTML = '';
+                candidates.forEach(function (c, idx) {
+                    const opt = document.createElement('option');
+                    opt.value = String(idx);
+                    opt.textContent = (c.form_text != null) ? String(c.form_text) : ('#' + (idx + 1));
+                    pick.appendChild(opt);
+                });
+                pick.value = '0';
+            } else if (pick) {
+                pick.classList.add('hidden');
+                pick.innerHTML = '';
+            }
+        }
+
         function clearImportFilledFields() {
+            clearRussianCandidateUI();
+            if (inputMode === 'russian') {
+                const formTextEl = document.getElementById('form_text');
+                if (formTextEl) {
+                    formTextEl.value = '';
+                }
+            }
             const shoreshEl = document.getElementById('shoresh_root');
             if (shoreshEl) {
                 shoreshEl.value = '';
@@ -221,15 +358,21 @@
         }
 
         function runWordImport(importBtn, source) {
-            const wordInput = document.getElementById('form_text');
-            if (!wordInput || !wordInput.value.trim()) {
-                alert('Enter a Hebrew form first.');
+            const fromRussian = inputMode === 'russian';
+            const triggerInput = fromRussian
+                ? document.getElementById('russian_word')
+                : document.getElementById('form_text');
+            if (!triggerInput || !triggerInput.value.trim()) {
+                alert(fromRussian ? 'Enter the Russian word first.' : 'Enter a Hebrew form first.');
                 return;
             }
-            const word = wordInput.value.trim();
-            const url = '{{ route('flashcards.words.import') }}'
+            const word = triggerInput.value.trim();
+            let url = '{{ route('flashcards.words.import') }}'
                 + '?source=' + encodeURIComponent(source)
                 + '&word=' + encodeURIComponent(word);
+            if (fromRussian) {
+                url += '&from_russian=1';
+            }
 
             importBtn.disabled = true;
 
@@ -256,6 +399,7 @@
                                 service: 'db',
                                 outcome: 'not_found',
                                 word: word,
+                                fromRussian: fromRussian,
                                 httpStatus: res.status,
                                 code: data.code,
                                 message: data.error || null,
@@ -267,63 +411,14 @@
                         throw err;
                     }
 
-                    const transcription = document.getElementById('transcription_ru');
-                    const shoreshEl = document.getElementById('shoresh_root');
-                    const freqRank = document.getElementById('frequency_rank');
-                    const freqPerM = document.getElementById('frequency_per_million');
-
-                    if (transcription) {
-                        transcription.value = (data.transcription_ru != null && String(data.transcription_ru).trim() !== '')
-                            ? data.transcription_ru
-                            : '';
-                    }
-                    if (shoreshEl) {
-                        shoreshEl.value = (data.shoresh_root != null && String(data.shoresh_root).trim() !== '')
-                            ? data.shoresh_root
-                            : '';
-                    }
-                    if (freqRank) {
-                        if (data.frequency_rank !== null && typeof data.frequency_rank !== 'undefined') {
-                            freqRank.value = data.frequency_rank;
-                        } else {
-                            clearNumberInput(freqRank);
-                        }
-                    }
-                    if (freqPerM) {
-                        if (data.frequency_per_million !== null && typeof data.frequency_per_million !== 'undefined') {
-                            freqPerM.value = data.frequency_per_million;
-                        } else {
-                            clearNumberInput(freqPerM);
-                        }
-                    }
-
-                    const entries = Array.isArray(data.entries) ? data.entries : [];
-
-                    const entriesContainer = document.getElementById('entries-container');
-                    if (!entriesContainer) {
-                        console.error('[flashcards.wordImport] #entries-container not found');
+                    if (fromRussian && data.candidates && Array.isArray(data.candidates) && data.candidates.length > 0) {
+                        lastRussianCandidates = data.candidates;
+                        showRussianCandidatesPanel(data.candidates);
+                        applyCandidateWordImportData(data.candidates[0]);
                         return;
                     }
-                    entriesContainer.innerHTML = '';
-                    index = 0;
-                    entries.forEach(function (entry) {
-                        const row = createEntryRow(
-                            index,
-                            entry.translation_ru || '',
-                            entry.form_type || '',
-                            entry.transcription_ru || ''
-                        );
-                        entriesContainer.appendChild(row);
-                        setupDelete(row);
-                        index++;
-                    });
 
-                    if (index === 0) {
-                        const row = createEntryRow(0, '', '', '');
-                        entriesContainer.appendChild(row);
-                        setupDelete(row);
-                        index = 1;
-                    }
+                    applyFlatWordImportData(data);
                 })
                 .catch(function (err) {
                     if (err && err.payload) {
@@ -345,6 +440,17 @@
                 runWordImport(spec.el, spec.source);
             });
         });
+
+        const hebrewCandidatePick = document.getElementById('hebrew_candidate_pick');
+        if (hebrewCandidatePick) {
+            hebrewCandidatePick.addEventListener('change', function () {
+                const i = parseInt(hebrewCandidatePick.value, 10);
+                if (!Number.isFinite(i) || !lastRussianCandidates[i]) {
+                    return;
+                }
+                applyCandidateWordImportData(lastRussianCandidates[i]);
+            });
+        }
 
         if (container) {
             container.addEventListener('click', function (e) {

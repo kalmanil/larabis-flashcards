@@ -80,7 +80,7 @@ class HebrewWordNormalizer
         }
 
         $related = $this->extractRelated($raw, $root);
-        if (!empty($related)) {
+        if (! empty($related)) {
             $result['related'] = $related;
         }
 
@@ -94,13 +94,14 @@ class HebrewWordNormalizer
             return $this->normalizeRussian($fromDesc);
         }
         $input = $raw['transcription_ru'] ?? null;
+
         return $this->normalizeTransliterationRu($input, $hebrewWord);
     }
 
     protected function extractDescRu(array $raw): ?string
     {
         $parsed = $raw['parsed_wikitext'] ?? null;
-        if (!$parsed || !isset($parsed['templates_flat'])) {
+        if (! $parsed || ! isset($parsed['templates_flat'])) {
             return null;
         }
         foreach ($parsed['templates_flat'] as $t) {
@@ -117,6 +118,7 @@ class HebrewWordNormalizer
                 return trim($form);
             }
         }
+
         return null;
     }
 
@@ -127,14 +129,17 @@ class HebrewWordNormalizer
             if (preg_match('/[\x{0400}-\x{04FF}]/u', $s)) {
                 return $this->normalizeRussian($s);
             }
+
             return $this->latinToRussian($s);
         }
+
         return $this->hebrewToRussian($hebrewWord);
     }
 
     protected function normalizeRussian(string $s): string
     {
         $s = preg_replace('/\s+/', ' ', $s);
+
         return trim($s);
     }
 
@@ -156,7 +161,7 @@ class HebrewWordNormalizer
         $len = mb_strlen($latin);
         for ($i = 0; $i < $len; $i++) {
             $c = mb_substr($latin, $i, 1);
-            $bigram = $i < $len - 1 ? $c . mb_substr($latin, $i + 1, 1) : '';
+            $bigram = $i < $len - 1 ? $c.mb_substr($latin, $i + 1, 1) : '';
             if (isset($map[$bigram])) {
                 $out .= $map[$bigram];
                 $i++;
@@ -164,6 +169,7 @@ class HebrewWordNormalizer
                 $out .= $map[$c] ?? $c;
             }
         }
+
         return $out;
     }
 
@@ -181,6 +187,7 @@ class HebrewWordNormalizer
         foreach ($chars as $c) {
             $out .= $map[$c] ?? $c;
         }
+
         return $out ?: '?';
     }
 
@@ -194,6 +201,7 @@ class HebrewWordNormalizer
         $s = preg_replace('/[\x{05BE}\x{2010}\x{2011}\x{2013}\x{2014}\-\s]+/u', '-', $s);
         $s = preg_replace('/[\x{05B0}\x{05B1}\x{05B2}\x{05B3}\x{05B4}\x{05B5}\x{05B6}\x{05B7}\x{05B8}\x{05B9}\x{05BA}\x{05BB}\x{05BC}\x{05BD}\x{05BF}\x{05C1}\x{05C2}]/u', '', $s);
         $s = trim($s, '- ');
+
         return $s;
     }
 
@@ -258,7 +266,7 @@ class HebrewWordNormalizer
             if ($this->isSelfReference($t, $selfRefs)) {
                 continue;
             }
-            if (!in_array(strtolower($t), array_map('strtolower', $cleaned))) {
+            if (! in_array(strtolower($t), array_map('strtolower', $cleaned))) {
                 $cleaned[] = $t;
             }
         }
@@ -285,19 +293,19 @@ class HebrewWordNormalizer
             }
         }
 
-        if (empty($core) && !empty($other)) {
+        if (empty($core) && ! empty($other)) {
             $core = array_slice($other, 0, 1);
             $extended = array_merge($extended, array_slice($other, 1));
-        } elseif (!empty($other)) {
+        } elseif (! empty($other)) {
             $extended = array_merge($extended, $other);
         }
 
-        if (empty($core) && !empty($extended)) {
+        if (empty($core) && ! empty($extended)) {
             $core = array_slice($extended, 0, 1);
             $extended = array_slice($extended, 1);
         }
 
-        if (empty($core) && !empty($usage)) {
+        if (empty($core) && ! empty($usage)) {
             $core = array_slice($usage, 0, 1);
             $usage = array_slice($usage, 1);
         }
@@ -325,6 +333,7 @@ class HebrewWordNormalizer
                 }
             }
         }
+
         return array_filter(array_unique($refs));
     }
 
@@ -336,6 +345,7 @@ class HebrewWordNormalizer
                 return true;
             }
         }
+
         return false;
     }
 
@@ -343,6 +353,7 @@ class HebrewWordNormalizer
     {
         $s = mb_strtolower(trim($s));
         $s = preg_replace('/[\x{0301}\x{0300}\x{0308}]/u', '', $s);
+
         return $s;
     }
 
@@ -360,15 +371,17 @@ class HebrewWordNormalizer
         foreach ($chars as $c) {
             $out .= $map[$c] ?? $c;
         }
+
         return strtolower($out);
     }
 
     protected function stripMetaLabel(string $t): string
     {
         foreach (self::$metaLabels as $label) {
-            $t = preg_replace('/\b' . preg_quote($label, '/') . '\b/i', '', $t);
+            $t = preg_replace('/\b'.preg_quote($label, '/').'\b/i', '', $t);
         }
         $t = preg_replace('/\s*[\(\[]\s*[^\)\]]*\s*[\)\]]\s*/u', '', $t);
+
         return trim($t, " \t\n\r\0\x0B,");
     }
 
@@ -389,6 +402,7 @@ class HebrewWordNormalizer
                 }
             }
         }
+
         return false;
     }
 
@@ -412,6 +426,7 @@ class HebrewWordNormalizer
                 }
             }
         }
+
         return false;
     }
 
@@ -420,6 +435,7 @@ class HebrewWordNormalizer
         if ($root === '') {
             return [];
         }
+
         return [];
     }
 
@@ -432,12 +448,13 @@ class HebrewWordNormalizer
             }
             if (is_array($v)) {
                 $v = $this->pruneEmpty($v);
-                if (empty($v) && !in_array($k, ['meanings', 'part_of_speech'])) {
+                if (empty($v) && ! in_array($k, ['meanings', 'part_of_speech'])) {
                     continue;
                 }
             }
             $out[$k] = $v;
         }
+
         return $out;
     }
 }

@@ -4,6 +4,7 @@ namespace App\Features\Flashcards\Services\WordImport;
 
 use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
 use App\Features\Flashcards\Support\FormTypeCatalog;
+use App\Features\Flashcards\Support\ShoreshRootNormalizer;
 use Illuminate\Support\Facades\Http;
 
 class OpenAiWordImportSource implements WordImportSourceInterface
@@ -89,11 +90,58 @@ class OpenAiWordImportSource implements WordImportSourceInterface
 
         return [
             'transcription_ru' => $transcriptionRu,
-            'shoresh_root' => isset($inner['shoresh_root']) ? (string) $inner['shoresh_root'] : null,
+            'shoresh_root' => ShoreshRootNormalizer::normalize(
+                isset($inner['shoresh_root']) && trim((string) $inner['shoresh_root']) !== ''
+                    ? (string) $inner['shoresh_root']
+                    : null
+            ),
             'frequency_rank' => $frequencyRank !== null ? (float) $frequencyRank : null,
             'frequency_per_million' => $frequencyPerMillion !== null ? (float) $frequencyPerMillion : null,
             'entries' => $entries,
         ];
+    }
+
+    public function fetchFromRussian(string $russianText): ?array
+    {
+        $apiKey = (string) config('services.openai.key', env('OPENAI_API_KEY'));
+
+        if ($apiKey === '') {
+            return null;
+        }
+
+        $url = 'https://api.openai.com/v1/responses';
+
+        $payload = [
+            'model' => 'gpt-5.4',
+            'instructions' => FormTypeCatalog::russianWordImportSystemInstruction(),
+            'input' => 'Russian word or phrase to map to Hebrew: '.trim($russianText),
+        ];
+
+        $response = Http::withoutVerifying()
+            ->withHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Bearer '.$apiKey,
+            ])
+            ->post($url, $payload);
+
+        if (! $response->ok()) {
+            return null;
+        }
+
+        $data = $response->json();
+        $text = $this->extractOutputTextFromResponses($data);
+
+        if (! is_string($text) || trim($text) === '') {
+            return null;
+        }
+
+        $text = $this->stripJsonFences($text);
+        $inner = json_decode($text, true);
+        if (! is_array($inner)) {
+            return null;
+        }
+
+        return RussianWordImportNormalizer::fromLlmArray($inner);
     }
 
     /**

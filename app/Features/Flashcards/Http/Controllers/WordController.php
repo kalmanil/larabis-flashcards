@@ -19,6 +19,7 @@ use App\Features\Flashcards\Services\WordImport\DBWordImportSource;
 use App\Features\Flashcards\Services\WordImport\GeminiWordImportSource;
 use App\Features\Flashcards\Services\WordImport\OpenAiWordImportSource;
 use App\Features\Flashcards\Services\WordImport\UnitedWordImportSource;
+use App\Features\Flashcards\Support\FormTypeCatalog;
 use App\Helpers\TenancyHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -65,9 +66,10 @@ class WordController
                     ['language_id' => $lang->id, 'text' => $text]
                 );
 
-                $formType = isset($entry['form_type']) && trim((string) $entry['form_type']) !== ''
+                $formTypeRaw = isset($entry['form_type']) && trim((string) $entry['form_type']) !== ''
                     ? trim((string) $entry['form_type'])
                     : null;
+                $formType = $formTypeRaw !== null ? FormTypeCatalog::canonical($formTypeRaw) : null;
 
                 $pivotTranscription = null;
                 $overrideRaw = trim((string) ($entry['transcription_ru'] ?? ''));

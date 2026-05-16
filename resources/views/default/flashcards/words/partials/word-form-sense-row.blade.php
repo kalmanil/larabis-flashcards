@@ -26,12 +26,16 @@
                autocomplete="off">
     </div>
     <div class="space-y-1">
-        <label class="block text-xs font-medium text-gray-600">Form type</label>
+        <div class="flex items-center justify-between gap-2">
+            <label class="block text-xs font-medium text-gray-600">Form type</label>
+            <span class="text-xs text-gray-400">suggestions</span>
+        </div>
         <input type="text"
                name="new_entries[{{ $idx }}][form_type]"
                value="{{ $formType }}"
                class="w-full {{ $inputClass }}"
-               placeholder="e.g. noun (masc.)"
+               list="flashcards-form-type-options"
+               placeholder="Choose a suggestion or type (aliases OK)"
                autocomplete="off">
     </div>
     <div class="space-y-1">

@@ -3,6 +3,7 @@
 namespace App\Features\Flashcards\Services\SenseImport;
 
 use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
+use App\Features\Flashcards\Support\FormTypeCatalog;
 use Illuminate\Support\Facades\Http;
 
 class GeminiExtraSenseSource implements ExtraSenseSourceInterface
@@ -37,18 +38,19 @@ class GeminiExtraSenseSource implements ExtraSenseSourceInterface
 
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='.urlencode($apiKey);
 
-        $prompt = "Analyze the Hebrew word '".$hebrewFormText."'. The following Russian glosses are already listed — do not repeat or merely paraphrase them: "
-            .$listJson
-            .". Return ONLY JSON: { \"entry\": { \"translation_ru\" (string), \"form_type\" (string), optional \"transcription_ru\" (string) } } for exactly one additional plausible sense. "
-            ."For optional per-sense \"transcription_ru\": practical Russian transliteration in Cyrillic only (as in Russian Hebrew textbooks)—not English/Latin romanization, not IPA. "
-            .'Optional lone lowercase h for voiceless glottal ה if needed. Fully lowercase. Mark stress with Unicode combining acute (U+0301) immediately after the stressed vowel only. '
-            ."If there is no reasonable extra sense, return { \"entry\": null }. Return ONLY valid JSON, with no extra commentary or code fences.";
+        $userText = "Hebrew word: {$hebrewFormText}\nListed Russian glosses (do not repeat or paraphrase): {$listJson}";
 
         $payload = [
+            'systemInstruction' => [
+                'parts' => [
+                    ['text' => FormTypeCatalog::extraSenseSystemInstruction()],
+                ],
+            ],
             'contents' => [
                 [
+                    'role' => 'user',
                     'parts' => [
-                        ['text' => $prompt],
+                        ['text' => $userText],
                     ],
                 ],
             ],
@@ -95,9 +97,7 @@ class GeminiExtraSenseSource implements ExtraSenseSourceInterface
 
         $out = [
             'translation_ru' => $translation,
-            'form_type' => isset($entry['form_type']) && trim((string) $entry['form_type']) !== ''
-                ? (string) $entry['form_type']
-                : null,
+            'form_type' => FormTypeCatalog::resolveFromImportEntry($entry),
         ];
         if (isset($entry['transcription_ru']) && trim((string) $entry['transcription_ru']) !== '') {
             $out['transcription_ru'] = TranscriptionRuNormalizer::normalize((string) $entry['transcription_ru']);

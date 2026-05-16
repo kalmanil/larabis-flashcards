@@ -9,6 +9,7 @@
         ];
         const inputBorder = @json($wordFormInputBorderJs);
         const btnStressSmall = @json($btnStressSmall);
+        const formTypeListId = 'flashcards-form-type-options';
 
         function getCsrfToken() {
             const tokenInput = document.querySelector('form input[name="_token"]');
@@ -137,7 +138,7 @@
                 '</div>' +
                 '<div class="space-y-1">' +
                 '<label class="block text-xs font-medium text-gray-600">Form type</label>' +
-                '<input type="text" name="new_entries[' + index + '][form_type]" class="w-full ' + inputBorder + '" placeholder="e.g. noun (masc.)" autocomplete="off">' +
+                '<input type="text" name="new_entries[' + index + '][form_type]" class="w-full ' + inputBorder + '" list="' + formTypeListId + '" placeholder="Choose a suggestion or type (aliases OK)" autocomplete="off">' +
                 '</div>' +
                 '<div class="space-y-1">' +
                 '<label class="block text-xs font-medium text-gray-600">Transcription if different</label>' +

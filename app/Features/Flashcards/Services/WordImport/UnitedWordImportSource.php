@@ -3,6 +3,7 @@
 namespace App\Features\Flashcards\Services\WordImport;
 
 use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
+use App\Features\Flashcards\Support\FormTypeCatalog;
 
 /**
  * Runs Gemini and OpenAI import, then merges into one payload (simple heuristics).
@@ -188,7 +189,7 @@ class UnitedWordImportSource implements WordImportSourceInterface
         }
         $entry = [
             'translation_ru' => $translation,
-            'form_type' => isset($row['form_type']) ? (string) $row['form_type'] : null,
+            'form_type' => FormTypeCatalog::resolveFromImportEntry($row),
         ];
         if (isset($row['transcription_ru']) && trim((string) $row['transcription_ru']) !== '') {
             $entry['transcription_ru'] = TranscriptionRuNormalizer::normalize((string) $row['transcription_ru']);
@@ -215,7 +216,8 @@ class UnitedWordImportSource implements WordImportSourceInterface
 
         $fg = isset($g['form_type']) ? trim((string) $g['form_type']) : '';
         $fo = isset($o['form_type']) ? trim((string) $o['form_type']) : '';
-        $formType = $fg !== '' ? $fg : ($fo !== '' ? $fo : null);
+        $picked = $fg !== '' ? $fg : ($fo !== '' ? $fo : '');
+        $formType = $picked !== '' ? FormTypeCatalog::resolveFromImportEntry(['form_type' => $picked]) : null;
 
         $entry = [
             'translation_ru' => $translation,

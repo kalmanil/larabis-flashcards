@@ -67,6 +67,7 @@
                 <span class="text-sm font-medium text-gray-700">Senses</span>
                 <button type="button" id="add-entry-row" class="text-sm text-indigo-600 hover:underline">+ Add sense</button>
             </div>
+            @include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.form-type-datalist'))
             <div id="entries-container" class="space-y-3">
                 @if (is_array($oldEntries))
                     @foreach ($oldEntries as $idx => $entry)
@@ -105,6 +106,7 @@
                 <span class="text-sm font-medium text-gray-700">Senses</span>
                 <button type="button" id="add-entry-row" class="text-sm text-indigo-600 hover:underline">+ Add sense</button>
             </div>
+            @include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.form-type-datalist'))
             <div id="entries-container" class="space-y-3">
                 @forelse ($oldEntries as $idx => $entry)
                     @include(\App\Helpers\TenancyHelper::getViewPath('flashcards.words.partials.word-form-sense-row'), [

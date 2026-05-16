@@ -3,6 +3,7 @@
 namespace App\Features\Flashcards\Services\SenseImport;
 
 use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
+use App\Features\Flashcards\Support\FormTypeCatalog;
 use Illuminate\Support\Facades\Http;
 
 class OpenAiExtraSenseSource implements ExtraSenseSourceInterface
@@ -37,16 +38,10 @@ class OpenAiExtraSenseSource implements ExtraSenseSourceInterface
 
         $url = 'https://api.openai.com/v1/responses';
 
-        $prompt = "Analyze the Hebrew word '".$hebrewFormText."'. The following Russian glosses are already listed — do not repeat or merely paraphrase them: "
-            .$listJson
-            .". Return ONLY JSON: { \"entry\": { \"translation_ru\" (string), \"form_type\" (string), optional \"transcription_ru\" (string) } } for exactly one additional plausible sense. "
-            ."For optional per-sense \"transcription_ru\": practical Russian transliteration in Cyrillic only (as in Russian Hebrew textbooks)—not English/Latin romanization, not IPA. "
-            .'Optional lone lowercase h for voiceless glottal ה if needed. Fully lowercase. Mark stress with Unicode combining acute (U+0301) immediately after the stressed vowel only. '
-            ."If there is no reasonable extra sense, return { \"entry\": null }. Return ONLY valid JSON, with no extra commentary or code fences.";
-
         $payload = [
             'model' => 'gpt-5.4',
-            'input' => $prompt,
+            'instructions' => FormTypeCatalog::extraSenseSystemInstruction(),
+            'input' => "Hebrew word: {$hebrewFormText}\nListed Russian glosses (do not repeat or paraphrase): {$listJson}",
         ];
 
         $response = Http::withoutVerifying()
@@ -91,9 +86,7 @@ class OpenAiExtraSenseSource implements ExtraSenseSourceInterface
 
         $out = [
             'translation_ru' => $translation,
-            'form_type' => isset($entry['form_type']) && trim((string) $entry['form_type']) !== ''
-                ? (string) $entry['form_type']
-                : null,
+            'form_type' => FormTypeCatalog::resolveFromImportEntry($entry),
         ];
         if (isset($entry['transcription_ru']) && trim((string) $entry['transcription_ru']) !== '') {
             $out['transcription_ru'] = TranscriptionRuNormalizer::normalize((string) $entry['transcription_ru']);

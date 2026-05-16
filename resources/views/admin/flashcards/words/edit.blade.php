@@ -67,6 +67,7 @@
                     <span class="text-sm font-medium text-gray-700">Senses</span>
                     <button type="button" id="add-entry-row" class="text-sm text-indigo-600 hover:underline">+ Add sense</button>
                 </div>
+                @include('tenants.flashcards::default.flashcards.words.partials.form-type-datalist')
                 <div id="entries-container" class="space-y-3">
                     @if (is_array($oldEntries))
                         @foreach ($oldEntries as $idx => $entry)
@@ -116,6 +117,7 @@
 
         const importExtraSenseUrl = @json(route('flashcards.words.import-extra-sense'));
         const smallImportBtn = 'px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded hover:bg-gray-300';
+        const formTypeListId = 'flashcards-form-type-options';
 
         function getCsrfToken() {
             const tokenInput = document.querySelector('form input[name="_token"]');
@@ -240,7 +242,7 @@
                 '</div>' +
                 '<div class="space-y-1">' +
                 '<label class="block text-xs font-medium text-gray-600">Form type</label>' +
-                '<input type="text" name="new_entries[' + index + '][form_type]" class="w-full border rounded px-3 py-2" placeholder="e.g. noun (masc.)" autocomplete="off">' +
+                '<input type="text" name="new_entries[' + index + '][form_type]" class="w-full border rounded px-3 py-2" list="' + formTypeListId + '" placeholder="Choose a suggestion or type (aliases OK)" autocomplete="off">' +
                 '</div>' +
                 '<div class="space-y-1">' +
                 '<label class="block text-xs font-medium text-gray-600">Transcription if different</label>' +

@@ -3,6 +3,7 @@
 namespace App\Features\Flashcards\Services\WordImport;
 
 use App\Features\Flashcards\Services\TranscriptionRuNormalizer;
+use App\Features\Flashcards\Support\FormTypeCatalog;
 use Illuminate\Support\Facades\Http;
 
 class GeminiWordImportSource implements WordImportSourceInterface
@@ -27,22 +28,19 @@ class GeminiWordImportSource implements WordImportSourceInterface
 
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='.urlencode($apiKey);
 
-        $prompt = "Analyze the Hebrew word '".$hebrewFormText."' and return a JSON object with exactly these keys: "
-            ."'transcription_ru' (string): Practical Russian transliteration in Cyrillic only (as in Russian Hebrew textbooks)—not English/Latin romanization, not IPA. Optional lone lowercase h for voiceless glottal ה if needed. Fully lowercase. Mark stress with Unicode combining acute (U+0301) immediately after the stressed vowel only (example: шало́м). No other stress markers. "
-            ."'shoresh_root' (string): The 2 or 4 letter Hebrew root (no hyphens - e.g., קדם). "
-            ."'frequency_rank' (number): frequency rank of the word. "
-            ."'frequency_per_million' (number): usage frequency per million words. "
-            ."'entries' (array of objects): each object is one sense with exactly one most fitting Russian translation: "
-            ."'translation_ru' (string): the single best Russian translation for this sense. "
-            ."'form_type' (string): part of speech or grammatical form in English (e.g., adverb, noun (masc.), verb – hif'il infinitive). "
-            ."'transcription_ru' (string, optional): only if this sense's pronunciation differs from the top-level 'transcription_ru'; same Cyrillic-only and U+0301 stress rules. Omit if same as default. "
-            .'Return only one translation per sense. Return ONLY valid JSON, with no extra commentary or code fences.';
+        $userText = 'Hebrew word to analyze: '.$hebrewFormText;
 
         $payload = [
+            'systemInstruction' => [
+                'parts' => [
+                    ['text' => FormTypeCatalog::wordImportSystemInstruction()],
+                ],
+            ],
             'contents' => [
                 [
+                    'role' => 'user',
                     'parts' => [
-                        ['text' => $prompt],
+                        ['text' => $userText],
                     ],
                 ],
             ],
@@ -71,7 +69,6 @@ class GeminiWordImportSource implements WordImportSourceInterface
             return null;
         }
 
-        // Normalize keys and types to what the app expects.
         $entries = [];
         if (isset($inner['entries']) && is_array($inner['entries'])) {
             foreach ($inner['entries'] as $entry) {
@@ -84,7 +81,7 @@ class GeminiWordImportSource implements WordImportSourceInterface
                 }
                 $entryOut = [
                     'translation_ru' => $translation,
-                    'form_type' => isset($entry['form_type']) ? (string) $entry['form_type'] : null,
+                    'form_type' => FormTypeCatalog::resolveFromImportEntry($entry),
                 ];
                 if (isset($entry['transcription_ru']) && trim((string) $entry['transcription_ru']) !== '') {
                     $entryOut['transcription_ru'] = TranscriptionRuNormalizer::normalize((string) $entry['transcription_ru']);

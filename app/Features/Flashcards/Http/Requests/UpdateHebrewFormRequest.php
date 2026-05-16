@@ -2,6 +2,7 @@
 
 namespace App\Features\Flashcards\Http\Requests;
 
+use App\Features\Flashcards\Support\FormTypeCatalog;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateHebrewFormRequest extends FormRequest
@@ -21,7 +22,22 @@ class UpdateHebrewFormRequest extends FormRequest
             'frequency_per_million' => 'nullable|numeric|min:0',
             'new_entries' => 'nullable|array',
             'new_entries.*.translation_ru' => 'nullable|string|max:255',
-            'new_entries.*.form_type' => 'nullable|string|max:100',
+            'new_entries.*.form_type' => [
+                'nullable',
+                'string',
+                'max:100',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if ($value === null || $value === '') {
+                        return;
+                    }
+                    if (! is_string($value)) {
+                        return;
+                    }
+                    if (FormTypeCatalog::canonical($value) === null) {
+                        $fail(__('validation.in', ['attribute' => $attribute]));
+                    }
+                },
+            ],
             'new_entries.*.transcription_ru' => 'nullable|string|max:255',
             'enrichment_flow' => 'nullable|boolean',
             'add_to_deck' => 'nullable|in:0,1',
